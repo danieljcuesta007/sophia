@@ -1,0 +1,12 @@
+# builds
+spikes/**/probe
+spikes/**/probe-*
+spikes/**/enable-ax
+spikes/**/dump-tree
+spikes/**/remove-text
+!spikes/**/*.swift
+# raw probe output (contains window titles / message previews)
+result-*.json
+*.o
+.DS_Store
+# test pages are fine to commit
