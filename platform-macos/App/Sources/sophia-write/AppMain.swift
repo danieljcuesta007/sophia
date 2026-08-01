@@ -167,8 +167,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) {
                 [weak self] event in
-                // Let the click reach our own text view first, then hit-test.
-                DispatchQueue.main.async { self?.handleGlobalClick() }
+                // ONLY the scratch pad. Without this guard a click on the
+                // card's own Accept button hit-tests as "clicked away from an
+                // underline", closing the card before the button ever fires.
+                guard let self, self.statusWindow.owns(event.window) else { return event }
+                DispatchQueue.main.async { self.handleGlobalClick() }
                 return event
             }
         }
@@ -449,52 +452,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.alphaValue = 1
             return
         }
-        button.image = Self.sprigGlyph
+        button.image = Self.menuBarGlyph
         button.alphaValue = settings.paused ? 0.4 : 1.0
     }
 
-    /// The brand mark itself, drawn at menu-bar scale: the stem, two branches
-    /// that leave it on a vertical tangent, and the dot above. A template
-    /// image, so macOS tints it for light and dark menu bars automatically.
-    /// Drawn in code — no bundled asset to go missing.
-    private static let sprigGlyph: NSImage = {
-        let size = NSSize(width: 15, height: 17)
-        let image = NSImage(size: size, flipped: false) { _ in
-            NSColor.black.setStroke()
-            NSColor.black.setFill()
-            let midX = size.width / 2
+    /// The brand S at menu-bar scale, as a template image so macOS tints it
+    /// for light and dark menu bars.
+    private static let menuBarGlyph: NSImage = BrandMark.image(
+        height: 17, upper: .black, lower: .black, template: true)
 
-            // Stem.
-            let stem = NSBezierPath()
-            stem.move(to: NSPoint(x: midX, y: 1.4))
-            stem.line(to: NSPoint(x: midX, y: 12.2))
-            stem.lineWidth = 2.2
-            stem.lineCapStyle = .round
-            stem.stroke()
-
-            // Branches: control point straight above the root, so each leaves
-            // the stem vertically and bends outward — the icon's joint, scaled.
-            for (rootY, dx, tipY) in [(4.6, 3.9, 8.6), (7.6, -3.9, 11.2)] as [(CGFloat, CGFloat, CGFloat)] {
-                let branch = NSBezierPath()
-                branch.move(to: NSPoint(x: midX, y: rootY))
-                branch.curve(
-                    to: NSPoint(x: midX + dx, y: tipY),
-                    controlPoint1: NSPoint(x: midX, y: rootY + 2.4),
-                    controlPoint2: NSPoint(x: midX + dx * 0.55, y: tipY - 0.6))
-                branch.lineWidth = 2.0
-                branch.lineCapStyle = .round
-                branch.stroke()
-            }
-
-            // The dot of light.
-            NSBezierPath(ovalIn: NSRect(x: midX - 1.5, y: 14.0, width: 3.0, height: 3.0))
-                .fill()
-            return true
-        }
-        image.isTemplate = true
-        image.accessibilityDescription = "Sophia Write"
-        return image
-    }()
 
     // MARK: lint pipeline
 

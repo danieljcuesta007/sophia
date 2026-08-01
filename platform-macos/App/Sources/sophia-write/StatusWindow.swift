@@ -48,6 +48,14 @@ final class StatusWindow: NSObject, NSWindowDelegate {
         statusLabel?.stringValue = status
     }
 
+    /// Is this the Sophia window? Underline hit-testing inside our own process
+    /// must apply here (the scratch pad) and nowhere else — a click on the
+    /// suggestion card's own buttons must not be treated as a click on the
+    /// document beneath it.
+    func owns(_ candidate: NSWindow?) -> Bool {
+        candidate != nil && candidate === window
+    }
+
     private func build(status: String) -> NSView {
         let mark = NSImageView(image: Self.markImage(height: 34))
         mark.translatesAutoresizingMaskIntoConstraints = false
@@ -134,42 +142,54 @@ final class StatusWindow: NSObject, NSWindowDelegate {
         setShowAtLaunch(sender.state == .on)
     }
 
-    /// The brand mark drawn in code, in the brand green: stem, two branches
-    /// leaving it on a vertical tangent, dot above.
     static func markImage(height: CGFloat) -> NSImage {
-        let w = height * 0.88
-        return NSImage(size: NSSize(width: w, height: height), flipped: false) { rect in
-            OverlayController.styleColor.setStroke()
-            OverlayController.styleColor.setFill()
+        BrandMark.image(height: height, upper: .labelColor,
+                        lower: OverlayController.styleColor, template: false)
+    }
+}
+
+/// The Sophia mark drawn in code — the same geometry as `assets/mkicon.py`:
+/// two bowls of an S, each a thick round-capped arc, trimmed back from the
+/// waist so they never touch. No bundled asset to go missing, and it renders
+/// crisply at every size from the menu bar up.
+enum BrandMark {
+    /// Design constants mirror mkicon.py (canvas 1024): radius 150, weight 76,
+    /// 15 degrees trimmed at the waist, 26 degrees of open terminal.
+    private static let trim: CGFloat = 15
+    private static let terminal: CGFloat = 26
+
+    /// `template` yields a monochrome mask (menu bar); otherwise the two bowls
+    /// take `upper` and `lower`.
+    static func image(height: CGFloat, upper: NSColor, lower: NSColor,
+                      template: Bool) -> NSImage
+    {
+        // The S is 4r tall and 2r wide, plus the stroke on each axis.
+        let weight = height * (76.0 / 676.0)   // 4*150 + 76 = 676 design-tall
+        let r = (height - weight) / 4
+        let width = 2 * r + weight
+        let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { rect in
             let midX = rect.width / 2
-            let u = rect.height / 34.0  // design units
+            let midY = rect.height / 2
 
-            let stem = NSBezierPath()
-            stem.move(to: NSPoint(x: midX, y: 3 * u))
-            stem.line(to: NSPoint(x: midX, y: 25 * u))
-            stem.lineWidth = 4.4 * u
-            stem.lineCapStyle = .round
-            stem.stroke()
-
-            NSColor.labelColor.setStroke()
-            for (rootY, dx, tipY) in [(9.0, 8.0, 18.0), (15.0, -8.0, 23.0)]
-                as [(CGFloat, CGFloat, CGFloat)]
-            {
-                let branch = NSBezierPath()
-                branch.move(to: NSPoint(x: midX, y: rootY * u))
-                branch.curve(
-                    to: NSPoint(x: midX + dx * u, y: tipY * u),
-                    controlPoint1: NSPoint(x: midX, y: (rootY + 5) * u),
-                    controlPoint2: NSPoint(x: midX + dx * 0.55 * u, y: (tipY - 1) * u))
-                branch.lineWidth = 4.0 * u
-                branch.lineCapStyle = .round
-                branch.stroke()
+            // AppKit is y-up, the design is y-down: mirror the angles.
+            let top = NSBezierPath()
+            top.appendArc(withCenter: NSPoint(x: midX, y: midY + r), radius: r,
+                          startAngle: terminal, endAngle: 270 - trim,
+                          clockwise: false)
+            let bottom = NSBezierPath()
+            bottom.appendArc(withCenter: NSPoint(x: midX, y: midY - r), radius: r,
+                             startAngle: 90 - trim, endAngle: 180 + terminal,
+                             clockwise: true)
+            for (path, color) in [(top, upper), (bottom, lower)] {
+                path.lineWidth = weight
+                path.lineCapStyle = .round
+                (template ? NSColor.black : color).setStroke()
+                path.stroke()
             }
-
-            OverlayController.styleColor.setFill()
-            NSBezierPath(ovalIn: NSRect(
-                x: midX - 2.6 * u, y: 28.6 * u, width: 5.2 * u, height: 5.2 * u)).fill()
             return true
         }
+        image.isTemplate = template
+        image.accessibilityDescription = "Sophia Write"
+        return image
     }
 }
