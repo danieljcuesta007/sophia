@@ -52,10 +52,12 @@ final class OverlayController {
         window?.orderOut(nil)
     }
 
-    /// The issue whose underline contains this screen point (AX coords), if any.
+    /// The issue whose underline contains this screen point (AX coords), if
+    /// any. The hit target is padded well beyond the 2 px line — a target the
+    /// size of the line itself demands pixel-hunting.
     func mark(atAXPoint point: CGPoint) -> UnderlineMark? {
         marks.first { mark in
-            mark.rects.contains { $0.insetBy(dx: -2, dy: -3).contains(point) }
+            mark.rects.contains { $0.insetBy(dx: -4, dy: -6).contains(point) }
         }
     }
 

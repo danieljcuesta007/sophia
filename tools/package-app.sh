@@ -10,8 +10,14 @@ BIN="$ROOT/platform-macos/.build/release/sophia-write"
 "$ROOT/tools/build.sh"
 
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/sophia-write"
+
+# App icon: regenerate only if missing (assets/mkicon.py needs Chrome).
+if [ ! -f "$ROOT/assets/Sophia.icns" ]; then
+    python3 "$ROOT/assets/mkicon.py"
+fi
+cp "$ROOT/assets/Sophia.icns" "$APP/Contents/Resources/Sophia.icns"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -25,6 +31,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundleVersion</key><string>0.1.0</string>
     <key>CFBundleShortVersionString</key><string>0.1.0</string>
     <key>CFBundleExecutable</key><string>sophia-write</string>
+    <key>CFBundleIconFile</key><string>Sophia</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>LSUIElement</key><true/>
     <key>LSMinimumSystemVersion</key><string>14.0</string>

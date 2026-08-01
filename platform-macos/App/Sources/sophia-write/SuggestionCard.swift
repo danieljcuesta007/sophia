@@ -10,6 +10,7 @@ import AppKit
 protocol SuggestionCardDelegate: AnyObject {
     func cardAccepted(_ issue: Issue)
     func cardAcceptedGroup(_ group: SentenceGroup)
+    func cardDismissedGroup(_ group: SentenceGroup)
     func cardDismissed(_ issue: Issue)
     func cardAddedToDictionary(_ issue: Issue)
 }
@@ -55,12 +56,17 @@ final class SuggestionCard {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
         panel.contentView = content
 
-        // Below the underline; above it if there is no room.
+        // Below the underline; above it if there is no room. Clamped fully
+        // on-screen horizontally — a card bleeding off the edge hides its
+        // own buttons.
         let cocoaAnchor = OverlayController.cocoaRect(fromAX: anchor)
+        let screen = NSScreen.main?.visibleFrame
+            ?? NSScreen.screens.first?.visibleFrame ?? .zero
         var origin = CGPoint(x: cocoaAnchor.minX, y: cocoaAnchor.minY - size.height - 8)
-        if origin.y < (NSScreen.main?.visibleFrame.minY ?? 0) {
+        if origin.y < screen.minY {
             origin.y = cocoaAnchor.maxY + 8
         }
+        origin.x = min(max(origin.x, screen.minX + 8), screen.maxX - size.width - 8)
         panel.setFrameOrigin(origin)
         panel.orderFrontRegardless()
         self.panel = panel
@@ -85,7 +91,9 @@ final class SuggestionCard {
     }
 
     @objc private func dismissTapped() {
-        if let issue {
+        if let group {
+            delegate?.cardDismissedGroup(group)
+        } else if let issue {
             delegate?.cardDismissed(issue)
         } else {
             close()
@@ -141,6 +149,7 @@ final class SuggestionCard {
             learn.controlSize = .small
             buttons.append(learn)
         }
+        buttons.append(Self.hintLabel())
 
         let buttonRow = NSStackView(views: buttons)
         buttonRow.orientation = .horizontal
@@ -196,7 +205,7 @@ final class SuggestionCard {
         dismiss.bezelStyle = .rounded
         dismiss.controlSize = .small
 
-        let buttonRow = NSStackView(views: [fix, dismiss])
+        let buttonRow = NSStackView(views: [fix, dismiss, Self.hintLabel()])
         buttonRow.orientation = .horizontal
         buttonRow.spacing = 8
 
@@ -271,5 +280,13 @@ final class SuggestionCard {
             return "\(issue.anchor_text) \u{2192} \(replacement)"
         }
         return issue.anchor_text
+    }
+
+    /// Quiet keyboard affordance at the end of the button row.
+    private static func hintLabel() -> NSTextField {
+        let hint = NSTextField(labelWithString: "\u{21A9} accept   esc dismiss")
+        hint.font = .systemFont(ofSize: 10)
+        hint.textColor = .tertiaryLabelColor
+        return hint
     }
 }

@@ -8,6 +8,7 @@
 
 import AppKit
 import ApplicationServices
+import ServiceManagement
 
 func dlog(_ message: @autoclosure () -> String) {
     if ProcessInfo.processInfo.environment["SOPHIA_DEBUG"] != nil {
@@ -50,6 +51,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var activeSurface: TextSurface?
     /// Sentence clusters for the current marks (drives the sentence-diff card).
     private var sentenceGroups: [SentenceGroup] = []
+    /// Dismissals stick for the session (dogfood: re-flagging a dismissed issue
+    /// on every settle reads as nagging). Keyed per app + issue identity, not
+    /// position, so it survives the text shifting around it.
+    private var dismissed: Set<String> = []
+
+    private func dismissKey(_ issue: Issue) -> String {
+        "\(watcher.frontBundleID ?? "")|\(issue.anchor_text)|\(issue.kind)|\(issue.replacement ?? "")"
+    }
     private var lastFocusDescription = "No text field focused"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -88,6 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             activeSurface = nil
             lastFocusDescription = "Accessibility permission needed"
         }
+        refreshStatusIcon()
         dlog("trust changed: \(trusted)")
     }
 
@@ -150,6 +160,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         overlay.hide()
         card.close()
         watcher.refocus()  // AC-10: immediate
+        refreshStatusIcon()
         dlog("paused=\(settings.paused)")
     }
 
@@ -243,18 +254,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func buildStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        if let button = item.button {
-            let image = NSImage(
-                systemSymbolName: "text.badge.checkmark",
-                accessibilityDescription: "Sophia Write")
-            image?.isTemplate = true
-            button.image = image
-        }
         let menu = NSMenu()
         menu.delegate = self
         item.menu = menu
         statusItem = item
+        refreshStatusIcon()
     }
+
+    /// The brand mark, drawn in code (no bundled assets to lose): the Didot S
+    /// as a template image. States read at a glance — dimmed when paused, a
+    /// warning triangle when the agent has no Accessibility permission.
+    fileprivate func refreshStatusIcon() {
+        guard let button = statusItem?.button else { return }
+        if !wasTrusted {
+            let warn = NSImage(
+                systemSymbolName: "exclamationmark.triangle",
+                accessibilityDescription: "Sophia Write needs Accessibility permission")
+            warn?.isTemplate = true
+            button.image = warn
+            button.alphaValue = 1
+            return
+        }
+        button.image = Self.sGlyph
+        button.alphaValue = settings.paused ? 0.4 : 1.0
+    }
+
+    private static let sGlyph: NSImage = {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            let font = NSFont(name: "Didot-Bold", size: 15)
+                ?? NSFont.systemFont(ofSize: 15, weight: .bold)
+            let attrs: [NSAttributedString.Key: Any] = [
+                .font: font, .foregroundColor: NSColor.black,
+            ]
+            let s = NSAttributedString(string: "S", attributes: attrs)
+            let bounds = s.boundingRect(with: rect.size)
+            s.draw(at: NSPoint(
+                x: (rect.width - bounds.width) / 2,
+                y: (rect.height - bounds.height) / 2 - bounds.origin.y))
+            return true
+        }
+        image.isTemplate = true
+        image.accessibilityDescription = "Sophia Write"
+        return image
+    }()
 
     // MARK: lint pipeline
 
@@ -269,6 +312,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return
             }
             let marks: [UnderlineMark] = issues.compactMap { issue in
+                guard !self.dismissed.contains(self.dismissKey(issue)) else { return nil }
                 let rects = surface.bounds(for: issue.utf16Range)
                 guard !rects.isEmpty else { return nil }
                 return UnderlineMark(issue: issue, rects: rects)
@@ -276,6 +320,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.sentenceGroups = SentenceGrouper.groups(
                 text: text, issues: marks.map(\.issue))
             self.overlay.show(marks: marks, clippedTo: surface.visibleFrame())
+            self.refreshStatusIcon()
             dlog(
                 "marked \(marks.count)/\(issues.count) issues in "
                 + "\(Int(Date().timeIntervalSince(started) * 1000)) ms")
@@ -352,7 +397,17 @@ extension AppDelegate: SuggestionCardDelegate {
     }
 
     func cardDismissed(_ issue: Issue) {
+        dismissed.insert(dismissKey(issue))
         card.close()
+        watcher.refocus()  // the underline disappears now, not on the next edit
+    }
+
+    func cardDismissedGroup(_ group: SentenceGroup) {
+        for issue in group.issues {
+            dismissed.insert(dismissKey(issue))
+        }
+        card.close()
+        watcher.refocus()
     }
 
     func cardAddedToDictionary(_ issue: Issue) {
@@ -369,9 +424,12 @@ extension AppDelegate: NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let status = NSMenuItem(
-            title: wasTrusted ? lastFocusDescription : "Accessibility permission needed",
-            action: nil, keyEquivalent: "")
+        var statusLine = wasTrusted ? lastFocusDescription : "Accessibility permission needed"
+        let issueCount = overlay.marks.count
+        if wasTrusted, !settings.paused, issueCount > 0 {
+            statusLine += " — \(issueCount) suggestion\(issueCount == 1 ? "" : "s")"
+        }
+        let status = NSMenuItem(title: statusLine, action: nil, keyEquivalent: "")
         status.isEnabled = false
         menu.addItem(status)
 
@@ -382,9 +440,11 @@ extension AppDelegate: NSMenuDelegate {
         }
         menu.addItem(.separator())
 
+        // Key equivalents shown here are hints; the chords are global taps.
         let pause = NSMenuItem(
             title: settings.paused ? "Resume Checking" : "Pause Checking",
-            action: #selector(menuTogglePause), keyEquivalent: "")
+            action: #selector(menuTogglePause), keyEquivalent: "p")
+        pause.keyEquivalentModifierMask = [.option, .shift]
         menu.addItem(pause)
 
         if let bundleID = watcher.frontBundleID, !settings.isDenied(bundleID) {
@@ -412,6 +472,16 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(NSMenuItem(
             title: "Open Dictionary File", action: #selector(openDictionary),
             keyEquivalent: ""))
+
+        // Launch at Login only works from the packaged .app bundle.
+        if Bundle.main.bundleURL.pathExtension == "app" {
+            let login = NSMenuItem(
+                title: "Launch at Login", action: #selector(toggleLaunchAtLogin),
+                keyEquivalent: "")
+            login.state = SMAppService.mainApp.status == .enabled ? .on : .off
+            menu.addItem(login)
+        }
+
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(
             title: "Quit Sophia Write", action: #selector(quit), keyEquivalent: "q"))
@@ -440,6 +510,18 @@ extension AppDelegate: NSMenuDelegate {
             dictionary.add("Addisuna")  // seed with the canonical example
         }
         NSWorkspace.shared.open(ConfigPaths.dictionaryFile)
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        do {
+            if SMAppService.mainApp.status == .enabled {
+                try SMAppService.mainApp.unregister()
+            } else {
+                try SMAppService.mainApp.register()
+            }
+        } catch {
+            dlog("launch-at-login toggle failed: \(error)")
+        }
     }
 
     @objc private func openAXSettings() {

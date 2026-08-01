@@ -18,3 +18,5 @@ target/
 spikes/**/lint-test
 platform-macos/.build/
 dist/
+assets/Sophia.iconset/
+assets/icon.html
