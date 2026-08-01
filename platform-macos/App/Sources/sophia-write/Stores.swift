@@ -110,6 +110,9 @@ final class SettingsStore {
     }
 
     private(set) var paused = false
+    /// Whether the Sophia window opens on launch. On by default so a new user
+    /// sees something; turned off by anyone who runs it at login.
+    private(set) var showWindowAtLaunch = true
     private var apps: [String: String] = [:]
     private var denylist: [String]
 
@@ -132,6 +135,7 @@ final class SettingsStore {
               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else { return }
         paused = obj["paused"] as? Bool ?? false
+        showWindowAtLaunch = obj["showWindowAtLaunch"] as? Bool ?? true
         apps = obj["apps"] as? [String: String] ?? [:]
         let extra = obj["denylist"] as? [String] ?? []
         denylist = Array(Set(Self.builtinDenylist + extra)).sorted()
@@ -141,6 +145,7 @@ final class SettingsStore {
         ConfigPaths.ensureDir()
         let obj: [String: Any] = [
             "version": 1, "paused": paused, "apps": apps, "denylist": denylist,
+            "showWindowAtLaunch": showWindowAtLaunch,
         ]
         guard let data = try? JSONSerialization.data(
             withJSONObject: obj, options: [.prettyPrinted, .sortedKeys]) else { return }
@@ -155,6 +160,11 @@ final class SettingsStore {
 
     func setPaused(_ value: Bool) {
         paused = value
+        save()
+    }
+
+    func setShowWindowAtLaunch(_ value: Bool) {
+        showWindowAtLaunch = value
         save()
     }
 

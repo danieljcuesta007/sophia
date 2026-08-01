@@ -50,6 +50,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var clickMonitor: Any?
     private var scrollMonitor: Any?
+    private var localClickMonitor: Any?
+    private var localScrollMonitor: Any?
     /// Belt-and-braces sweep: if focus moved without a notification we caught,
     /// stale marks get at most this long to live.
     private var validityTimer: Timer?
@@ -98,10 +100,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         trustPoll = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             self?.pollTrust()
         }
-        // The Dock click opens the window; a launch from the Dock should feel
-        // the same. (Launch at Login also passes here — acceptable until
-        // login-launch detection earns its complexity.)
-        statusWindow.show(status: currentStatusLine())
+        statusWindow.showAtLaunch = { [weak self] in
+            self?.settings.showWindowAtLaunch ?? true
+        }
+        statusWindow.setShowAtLaunch = { [weak self] value in
+            self?.settings.setShowWindowAtLaunch(value)
+        }
+        // The Dock click opens the window, so a launch from the Dock should
+        // feel the same — but anyone running Sophia at login can turn this off
+        // in the window itself rather than meeting it every morning.
+        if settings.showWindowAtLaunch {
+            statusWindow.show(status: currentStatusLine())
+        }
         dlog("launched; trusted=\(wasTrusted)")
     }
 
@@ -143,13 +153,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func startWatching() {
         watcher.start()
         _ = hotkeys.start()
+        // AC-27 keeps the overlay click-through, so clicks are observed — never
+        // intercepted. Clicking an underline both places the caret (the app
+        // gets the click) and opens the card.
+        //
+        // GLOBAL monitors only see events delivered to OTHER apps, so each
+        // needs a LOCAL twin or Sophia's own scratch pad — the surface the
+        // Dock window exists to demo — would be inert.
         if clickMonitor == nil {
-            // AC-27 keeps the overlay click-through, so clicks are observed —
-            // never intercepted — via a global monitor. Clicking an underline
-            // both places the caret (the app gets the click) and opens the card.
             clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) {
                 [weak self] _ in
                 self?.handleGlobalClick()
+            }
+            localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) {
+                [weak self] event in
+                // Let the click reach our own text view first, then hit-test.
+                DispatchQueue.main.async { self?.handleGlobalClick() }
+                return event
             }
         }
         if scrollMonitor == nil {
@@ -160,6 +180,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             scrollMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.scrollWheel]) {
                 [weak self] _ in
                 self?.repositionAfterScroll()
+            }
+            localScrollMonitor = NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel]) {
+                [weak self] event in
+                self?.repositionAfterScroll()
+                return event
             }
         }
         if validityTimer == nil {
@@ -424,17 +449,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.alphaValue = 1
             return
         }
-        button.image = Self.leafGlyph
+        button.image = Self.sprigGlyph
         button.alphaValue = settings.paused ? 0.4 : 1.0
     }
 
-    /// The brand is a growing leaf (the seal's sapling); the menu bar carries
-    /// the same idea as a template glyph.
-    private static let leafGlyph: NSImage = {
-        let image = NSImage(
-            systemSymbolName: "leaf", accessibilityDescription: "Sophia Write")
-            ?? NSImage()
+    /// The brand mark itself, drawn at menu-bar scale: the stem, two branches
+    /// that leave it on a vertical tangent, and the dot above. A template
+    /// image, so macOS tints it for light and dark menu bars automatically.
+    /// Drawn in code — no bundled asset to go missing.
+    private static let sprigGlyph: NSImage = {
+        let size = NSSize(width: 15, height: 17)
+        let image = NSImage(size: size, flipped: false) { _ in
+            NSColor.black.setStroke()
+            NSColor.black.setFill()
+            let midX = size.width / 2
+
+            // Stem.
+            let stem = NSBezierPath()
+            stem.move(to: NSPoint(x: midX, y: 1.4))
+            stem.line(to: NSPoint(x: midX, y: 12.2))
+            stem.lineWidth = 2.2
+            stem.lineCapStyle = .round
+            stem.stroke()
+
+            // Branches: control point straight above the root, so each leaves
+            // the stem vertically and bends outward — the icon's joint, scaled.
+            for (rootY, dx, tipY) in [(4.6, 3.9, 8.6), (7.6, -3.9, 11.2)] as [(CGFloat, CGFloat, CGFloat)] {
+                let branch = NSBezierPath()
+                branch.move(to: NSPoint(x: midX, y: rootY))
+                branch.curve(
+                    to: NSPoint(x: midX + dx, y: tipY),
+                    controlPoint1: NSPoint(x: midX, y: rootY + 2.4),
+                    controlPoint2: NSPoint(x: midX + dx * 0.55, y: tipY - 0.6))
+                branch.lineWidth = 2.0
+                branch.lineCapStyle = .round
+                branch.stroke()
+            }
+
+            // The dot of light.
+            NSBezierPath(ovalIn: NSRect(x: midX - 1.5, y: 14.0, width: 3.0, height: 3.0))
+                .fill()
+            return true
+        }
         image.isTemplate = true
+        image.accessibilityDescription = "Sophia Write"
         return image
     }()
 
