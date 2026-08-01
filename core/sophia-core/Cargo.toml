@@ -1,0 +1,10 @@
+[package]
+name = "sophia-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+harper-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

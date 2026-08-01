@@ -1,0 +1,15 @@
+[package]
+name = "sophia-ffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "sophia_ffi"
+# staticlib for the Swift shell; rlib so the FFI surface stays testable from Rust.
+# No cdylib — Cadence's core/ffi records that with both present the Swift linker
+# preferred the dylib and bound the app to an absolute dev-tree path.
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+sophia-core = { path = "../sophia-core" }

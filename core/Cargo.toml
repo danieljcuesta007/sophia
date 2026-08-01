@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = ["sophia-core", "ffi"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+# "concurrent" makes LintGroup Send+Sync (Arc-backed) so the engine can live
+# behind a global Mutex and be driven from the shell's worker queue.
+harper-core = { version = "2.7", features = ["concurrent"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+lto = true
