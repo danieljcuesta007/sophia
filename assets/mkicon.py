@@ -18,10 +18,10 @@ import sys
 
 OUT = os.path.dirname(os.path.abspath(__file__))
 
-PAPER = "#F7F2E7"     # warm cream — the color lives in the paper
-INK = "#3F8A4F"       # Sophia green, the single accent
-INK_DEEP = "#2E5A38"  # deep green for the hairline edge
-GOLD = "#B8933F"      # antique gold — the seal's metalwork
+PAPER = "#101711"     # near-black with a green cast — modern tech ground
+INK = "#54B368"       # Sophia green, lifted to glow on the dark ground
+INK_DEEP = "#3F8A4F"  # the brand green proper (edges, hairlines)
+GOLD = "#D9AE52"      # gold, brightened for dark ground — the bud and spark
 
 CANVAS = 1024
 BODY = 824
@@ -99,17 +99,15 @@ def laurel(side):
 
 
 def spark():
-    """A small four-point star at the crown of the ring — the divine touch."""
-    cx, cy, R, r = 512, 512 - 318, 30, 9
+    """A small four-point star hovering above the bud — the light it grows
+    toward."""
+    cx, cy, R, r = 496, 178, 34, 10.5
     pts = []
     for i in range(8):
         rad = R if i % 2 == 0 else r
         a = math.pi / 4 * i - math.pi / 2
         pts.append(f"{cx + rad * math.cos(a):.1f},{cy + rad * math.sin(a):.1f}")
-    return (
-        f'<circle cx="{cx}" cy="{cy}" r="44" fill="{PAPER}"/>'
-        f'<polygon points="{" ".join(pts)}" fill="{GOLD}"/>'
-    )
+    return f'<polygon points="{" ".join(pts)}" fill="{GOLD}"/>'
 
 
 def bezier(p0, p1, p2, p3, t):
@@ -175,12 +173,12 @@ def branch():
 
 
 def emblem():
-    """Everything inside the paper: rings, spark, and the S-branch."""
+    """The mark: sapling and spark on the dark ground. No rings, no frame —
+    ornament is what made revision two feel antique. Scaled about the group's
+    own center (~505, 448) so the plant owns the field."""
     return (
-        # Double ring, thin — a seal, not a badge.
-        f'<circle cx="512" cy="512" r="318" fill="none" stroke="{GOLD}" stroke-width="10"/>'
-        f'<circle cx="512" cy="512" r="292" fill="none" stroke="{GOLD}" stroke-width="3.5" opacity="0.75"/>'
-        + spark() + branch()
+        '<g transform="translate(512,512) scale(1.16) translate(-505,-448)">'
+        + spark() + branch() + "</g>"
     )
 
 
