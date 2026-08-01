@@ -54,3 +54,20 @@ mkdir -p "$HOME/Applications"
 rm -rf "$INSTALL"
 cp -R "$APP" "$INSTALL"
 echo "==> installed: $INSTALL"
+
+# Verify what actually got bundled (the Cadence 7/31 lesson: never trust that
+# the build shipped what the source says).
+if ! diff -q "$ROOT/assets/Sophia.icns" "$INSTALL/Contents/Resources/Sophia.icns" >/dev/null; then
+    echo "!!  bundled icon differs from assets/Sophia.icns"
+    exit 1
+fi
+
+# macOS caches app icons hard: without this the Dock keeps showing the old
+# art indefinitely. Re-register with LaunchServices (the Dock's source of
+# truth), drop the icon caches, restart the Dock. All user-level, no admin.
+LSREG="/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister"
+touch "$INSTALL" "$INSTALL/Contents/Info.plist" "$INSTALL/Contents/Resources/Sophia.icns"
+[ -x "$LSREG" ] && "$LSREG" -f "$INSTALL" 2>/dev/null
+rm -rf "$HOME/Library/Caches/com.apple.iconservices.store" 2>/dev/null || true
+killall Dock 2>/dev/null || true
+echo "==> icon refreshed (LaunchServices re-registered, Dock restarted)"

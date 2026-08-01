@@ -71,28 +71,36 @@ def capsule(x, y, angle_deg, length, width, fill):
 # White ground; the STEM is the one green element (Cadence's one green bar,
 # turned to grow); near-black capsule leaves; a green dot of light above.
 STEM_X = 512
-STEM_TOP = 360
-STEM_BOTTOM = 712
+# Tall enough that every branch surfaces below the rounded cap — a branch
+# root peeking past the green tip was the audit catch on the first render.
+STEM_TOP = 292
+STEM_BOTTOM = 716
 STEM_W = 66  # Cadence-weight capsules, not hairlines
 
 
 def emblem():
     parts = []
-    # Cadence's defining trait: the capsules never touch. Leaves float beside
-    # the stem with a crisp gap, starting a fixed distance out along their own
-    # axis. (attach_y, side, length) — alternating, tapering toward the crown.
-    leaves = [
-        (648, -1, 158), (566, +1, 144),
-        (484, -1, 128), (402, +1, 112),
+    # Branches GROW OUT of the stem: each is a thick round-capped quadratic
+    # that starts at the stem's centerline with a vertical tangent (the root
+    # is hidden under the stem, drawn after), so it emerges from the stem edge
+    # flowing upward, then bends outward. The joint reads as growth, not as a
+    # shape parked next to another shape. (attach_y, side, scale.)
+    branches = [
+        (664, -1, 1.00), (576, +1, 0.88),
+        (488, -1, 0.76), (404, +1, 0.64),
     ]
-    detach = STEM_W / 2 + 26  # stem edge + air
-    for y, side, length in leaves:
-        angle = -46 if side > 0 else -134
-        rad = math.radians(angle)
-        sx = STEM_X + math.cos(rad) * detach
-        sy = y + math.sin(rad) * detach
-        parts.append(capsule(sx, sy, angle, length, STEM_W, DARK))
-    # The stem: one green capsule, vertical — geometry, not botany.
+    for y, side, s in branches:
+        cx = STEM_X                      # root on the centerline
+        cy = y
+        ctrl = (cx, cy - 96 * s)         # straight up: tangent matches stem
+        end = (cx + side * 132 * s, cy - 172 * s)
+        parts.append(
+            f'<path d="M{cx},{cy} Q{ctrl[0]:.1f},{ctrl[1]:.1f} '
+            f'{end[0]:.1f},{end[1]:.1f}" fill="none" stroke="{DARK}" '
+            f'stroke-width="{STEM_W - 4}" stroke-linecap="round"/>'
+        )
+    # The stem: one green capsule, vertical — drawn over the branch roots so
+    # each branch surfaces exactly at the stem edge, tangent-smooth.
     parts.append(capsule(STEM_X, STEM_BOTTOM, -90, STEM_BOTTOM - STEM_TOP,
                          STEM_W, INK))
     # The light it grows toward — with the stem, a quiet lowercase i.
