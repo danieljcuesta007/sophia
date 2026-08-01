@@ -55,6 +55,28 @@ fn serde_json_from(s: &str) -> Option<LintOptions> {
     sophia_core::parse_options(s)
 }
 
+/// Word-level LCS diff of `before` -> `after` (blueprint §7.5): returns heap
+/// JSON `[{start,end,before,after}]` with UTF-16 offsets into `before`;
+/// applying any subset of hunks reconstructs exactly, whitespace included.
+/// Release with [`sophia_free`]. Never null; failures return `[]`.
+///
+/// # Safety
+/// `before` and `after` must each be null or a valid NUL-terminated C string.
+#[no_mangle]
+pub unsafe extern "C" fn sophia_diff(
+    before: *const c_char,
+    after: *const c_char,
+) -> *mut c_char {
+    let json = catch_unwind(AssertUnwindSafe(|| {
+        match (c_str(before), c_str(after)) {
+            (Some(b), Some(a)) => sophia_core::diff::diff_json(b, a),
+            _ => b"[]".to_vec(),
+        }
+    }))
+    .unwrap_or_else(|_| b"[]".to_vec());
+    to_c(json)
+}
+
 /// Pre-load the dictionary and rule set so the first real lint is fast.
 /// Call once at agent launch, off the main thread.
 #[no_mangle]

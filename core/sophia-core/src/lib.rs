@@ -7,6 +7,7 @@
 //! converts in O(n), verified to round-trip exactly from Swift (Spike 3).
 
 pub mod confusions;
+pub mod diff;
 
 use std::sync::{Mutex, OnceLock};
 
@@ -15,7 +16,7 @@ use harper_core::spell::FstDictionary;
 use harper_core::{remove_overlaps, Dialect, Document};
 use serde::{Deserialize, Serialize};
 
-use confusions::WeatherWhether;
+use confusions::{ItsIts, WeatherWhether, YourYoure};
 
 /// One detected issue — the wire subset of the blueprint §19 `Issue` model.
 #[derive(Serialize)]
@@ -102,6 +103,8 @@ pub fn lint_text(text: &str, opts: &LintOptions) -> Vec<u8> {
         .map(|mut group| group.lint(&document))
         .unwrap_or_default();
     lints.extend(WeatherWhether.lint(&document));
+    lints.extend(ItsIts.lint(&document));
+    lints.extend(YourYoure.lint(&document));
     remove_overlaps(&mut lints);
 
     let source: Vec<char> = document.get_source().to_vec();

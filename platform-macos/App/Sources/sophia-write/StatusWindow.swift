@@ -67,6 +67,7 @@ final class StatusWindow: NSObject, NSWindowDelegate {
 
         // Keyboard map (§16), the part worth memorizing.
         let keys: [(String, String)] = [
+            ("\u{2318}\u{21E7}K", "Rewrite the selected text"),
             ("\u{2318}\u{21E7};", "Jump to next suggestion"),
             ("\u{2318}\u{21E7}'", "Accept the open card"),
             ("\u{2325}\u{21E7}D", "Add word to dictionary"),

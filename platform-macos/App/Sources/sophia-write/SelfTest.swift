@@ -33,6 +33,8 @@ enum SelfTest {
         }
         check("weather->whether flagged", flagged("weather", "whether"))
         check("quater->quarter flagged", flagged("quater", "quarter"))
+        check("its->it's flagged (the Grammarly-only miss, closed)",
+              flagged("its", "it's"))
         check("steady-state lint < 50 ms", elapsedMs < 50,
               String(format: "%.2f ms", elapsedMs))
 
@@ -67,12 +69,32 @@ enum SelfTest {
               "\(groups.count) groups")
         if let group = groups.first {
             let fixed = SentenceGrouper.corrected(group)
-            let expectations = ["They're", "I think", "whether", "should have", "quarter"]
+            let expectations = [
+                "They're", "I think", "it's important", "whether", "should have",
+                "quarter",
+            ]
             check("corrected sentence applies all fixes",
                   expectations.allSatisfy { fixed.contains($0) }
                       && !fixed.contains("quater"),
                   fixed)
         }
+
+        // Layer 3: the diff FFI recovers word-boundary hunks and any subset
+        // round-trips exactly (rewrite-panel groundwork).
+        let before = "Their going to the meeting and i think its important."
+        let after = "They're going to the meeting and I think it's important."
+        let hunks = RewriteFFI.diff(before: before, after: after)
+        check("diff finds word-boundary hunks",
+              hunks.contains { $0.before == "Their" && $0.after == "They're" }
+                  && hunks.contains { $0.before == "i" && $0.after == "I" },
+              "\(hunks.count) hunks")
+        check("diff hunks round-trip", RewriteFFI.apply(hunks, to: before) == after)
+
+        // Voice guard: a pure contraction expansion is style, not correction.
+        let styleHunk = DiffHunk(start: 0, end: 4, before: "it's", after: "it is")
+        let realHunk = DiffHunk(start: 0, end: 3, before: "its", after: "it's")
+        check("voice guard classifies contraction expansion",
+              styleHunk.isContractionStyle && !realHunk.isContractionStyle)
 
         // Stores: settings round-trip + per-app mode logic (AC-10 logic half).
         let settings = SettingsStore()

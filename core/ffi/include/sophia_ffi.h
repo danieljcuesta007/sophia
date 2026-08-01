@@ -8,6 +8,11 @@
 // Offsets are UTF-16 code units. A panic inside the core returns "[]".
 char *sophia_lint(const char *text, const char *opts_json);
 
+// Word-level diff of before -> after. Returns heap JSON
+// [{start,end,before,after}] with UTF-16 offsets into `before`; release with
+// sophia_free. Applying any subset of hunks reconstructs exactly.
+char *sophia_diff(const char *before, const char *after);
+
 // Pre-loads the dictionary and rule set (~300 ms once). Call at agent launch,
 // off the main thread.
 void sophia_warmup(void);

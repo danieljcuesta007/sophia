@@ -240,11 +240,23 @@ final class WebKitTextSurface: TextSurface {
     }
 
     func select(range: NSRange, expecting: String) -> Bool {
-        // WebKit web areas do not accept document-offset kAXSelectedTextRange
-        // writes against our concatenated indexing. Try the honest attempt with
-        // readback; when it fails (expected today), the caller abandons and the
-        // document is untouched. Known Phase-1 limitation, listed for live
-        // measurement in the dogfood.
+        // WebKit web areas do not accept document-offset selection writes
+        // against our concatenated indexing — but the per-paragraph
+        // AXStaticText NODES might accept node-local ranges (untested in
+        // Spike 1; readback decides). When the range sits inside one node,
+        // try there first; fall back to the web area. Any failure abandons —
+        // the document is never touched on a lie.
+        if let node = nodes.first(where: {
+            range.location >= $0.start && range.location + range.length <= $0.start + $0.length
+        }) {
+            let local = NSRange(location: range.location - node.start, length: range.length)
+            if AX.setSelectedRange(node.element, local) {
+                if AX.selectedText(node.element) == expecting
+                    || AX.selectedText(element) == expecting {
+                    return true
+                }
+            }
+        }
         guard AX.setSelectedRange(element, range) else { return false }
         return AX.selectedText(element) == expecting
     }

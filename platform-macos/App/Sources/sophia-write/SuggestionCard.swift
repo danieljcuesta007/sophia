@@ -13,13 +13,22 @@ protocol SuggestionCardDelegate: AnyObject {
     func cardDismissedGroup(_ group: SentenceGroup)
     func cardDismissed(_ issue: Issue)
     func cardAddedToDictionary(_ issue: Issue)
+    func cardWantsExplanation(_ issue: Issue)
 }
 
 final class SuggestionCard {
     weak var delegate: SuggestionCardDelegate?
     private var panel: NSPanel?
+    private var messageLabel: NSTextField?
+    /// Set by the app before show() when the on-device model can explain rules.
+    var explainEnabled = false
     private(set) var issue: Issue?
     private(set) var group: SentenceGroup?
+
+    /// Swap the one-line message (used by "Why?" once the model answers).
+    func updateMessage(_ text: String) {
+        messageLabel?.stringValue = text
+    }
 
     var isOpen: Bool { panel?.isVisible == true }
 
@@ -105,6 +114,12 @@ final class SuggestionCard {
         delegate?.cardAddedToDictionary(issue)
     }
 
+    @objc private func whyTapped() {
+        guard let issue else { return }
+        updateMessage("Thinking\u{2026}")
+        delegate?.cardWantsExplanation(issue)
+    }
+
     // MARK: layout
 
     private func buildContent(for issue: Issue) -> NSView {
@@ -119,8 +134,9 @@ final class SuggestionCard {
         let message = NSTextField(labelWithString: issue.message)
         message.font = .systemFont(ofSize: 12)
         message.textColor = .secondaryLabelColor
-        message.maximumNumberOfLines = 2
+        message.maximumNumberOfLines = 3
         message.preferredMaxLayoutWidth = 260
+        messageLabel = message
 
         let change = NSTextField(labelWithString: changeLine(for: issue))
         change.font = .systemFont(ofSize: 13, weight: .medium)
@@ -148,6 +164,13 @@ final class SuggestionCard {
             learn.bezelStyle = .rounded
             learn.controlSize = .small
             buttons.append(learn)
+        }
+        if explainEnabled {
+            let why = NSButton(
+                title: "Why?", target: self, action: #selector(whyTapped))
+            why.bezelStyle = .rounded
+            why.controlSize = .small
+            buttons.append(why)
         }
         buttons.append(Self.hintLabel())
 

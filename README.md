@@ -5,7 +5,8 @@ deterministic Rust engine (Harper), rewrites come from Apple's on-device foundat
 model. No account, no API key, no network calls.
 
 Spec: see the companion blueprint repo (`sophia-write-blueprint`). Current status:
-**Phase 1 — ambient core built; live dogfood pending.**
+**Phase 1 ambient core + Phase 2 rewrite (⌘⇧K, on-device model) built; live
+dogfood running.**
 
 ## Layout
 
@@ -52,7 +53,19 @@ re-verification — if the text moved, the edit is abandoned silently.
 - Secure text fields and deny-listed apps (password managers by default) get nothing.
 - Personal dictionary at `~/.config/sophia/dictionary.json` (shared schema, designed
   for Cadence to adopt); per-app rules + pause in `~/.config/sophia/settings.json`.
-- Keyboard: `⌘⇧;` next issue · `⌘⇧'` accept · `⌥⇧D` add word · `⌥⇧P` pause · `Esc` dismiss.
+- Keyboard: `⌘⇧K` rewrite selection · `⌘⇧;` next issue · `⌘⇧'` accept · `⌥⇧D` add word
+  · `⌥⇧P` pause · `Esc` dismiss.
+
+## Rewrite (Phase 2)
+
+Select text anywhere and press `⌘⇧K`: a non-activating panel offers Proofread,
+Concise, Professional, Friendly, Expand, or a free-text instruction. Apple's
+on-device ~3B model rewrites the whole span (pre-warmed at launch; text never
+leaves the machine); a word-level LCS diff in Rust recovers the edit spans; the
+guards reject rewrites that change length wildly, merge sentences in Proofread,
+or silently expand contractions (voice guard). Nothing applies until Accept.
+Suggestion cards also gain a "Why?" button — the model explains the rule in one
+sentence, on demand.
 
 ## Requirements
 

@@ -9,6 +9,7 @@
 import AppKit
 import ApplicationServices
 import ServiceManagement
+import SophiaInsertion
 
 func dlog(_ message: @autoclosure () -> String) {
     if ProcessInfo.processInfo.environment["SOPHIA_DEBUG"] != nil {
@@ -39,6 +40,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let card = SuggestionCard()
     private let hotkeys = ComboHotkeys()
     private let statusWindow = StatusWindow()
+    private let rewritePanel = RewritePanel()
+    /// Issues from the last completed lint — reused to reposition underlines
+    /// on scroll without a re-lint.
+    private var lastIssues: [Issue] = []
+    private var lastReposition = Date.distantPast
+    private var metricsTimer: Timer?
 
     private var statusItem: NSStatusItem?
     private var clickMonitor: Any?
@@ -71,7 +78,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         watcher.delegate = self
         card.delegate = self
+        rewritePanel.delegate = self
         wireHotkeys()
+
+        // AC-15: pre-warm the model at launch, off the main thread — the user
+        // never meets the 3.47 s cold path.
+        if #available(macOS 26.0, *) {
+            DispatchQueue.global(qos: .utility).async {
+                RewriteEngine.shared.prewarm()
+            }
+        }
+        startMetrics()
 
         if wasTrusted {
             startWatching()
@@ -136,12 +153,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         if scrollMonitor == nil {
-            // AX has no scroll notification, so any scroll anywhere makes every
-            // mark position suspect: hide immediately, re-settle after the pause.
+            // AX has no scroll notification. Grammarly-level fluency means the
+            // marks RIDE the scroll, not blink out: recompute bounds from the
+            // last lint (a few ms) instead of hiding and re-linting. The card
+            // closes — its anchor moved.
             scrollMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.scrollWheel]) {
                 [weak self] _ in
-                guard let self, !self.overlay.marks.isEmpty || self.card.isOpen else { return }
-                self.watcher.noteScrolled()
+                self?.repositionAfterScroll()
             }
         }
         if validityTimer == nil {
@@ -160,10 +178,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: hotkeys
 
     private func wireHotkeys() {
-        hotkeys.cardIsOpen = { [weak self] in self?.card.isOpen == true }
+        hotkeys.cardIsOpen = { [weak self] in
+            self?.card.isOpen == true || self?.rewritePanel.isOpen == true
+        }
         hotkeys.hasMarks = { [weak self] in self?.overlay.marks.isEmpty == false }
         hotkeys.hasSurface = { [weak self] in self?.activeSurface != nil }
-        hotkeys.onEscape = { [weak self] in self?.card.close() }
+        hotkeys.onEscape = { [weak self] in
+            guard let self else { return }
+            if self.rewritePanel.isOpen {
+                self.rewritePanel.close()
+            } else {
+                self.card.close()
+            }
+        }
         hotkeys.onTogglePause = { [weak self] in self?.togglePause() }
         hotkeys.onNextIssue = { [weak self] in self?.jumpToNextIssue() }
         hotkeys.onAccept = { [weak self] in
@@ -175,6 +202,101 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         hotkeys.onAddToDictionary = { [weak self] in self?.addWordNearCaret() }
+        hotkeys.onRewrite = { [weak self] in self?.openRewrite() }
+        hotkeys.rewriteEnabled = { [weak self] in
+            guard let self, !self.settings.paused, self.wasTrusted else { return false }
+            guard #available(macOS 26.0, *) else { return false }
+            // §16 conflict policy: never steal ⌘⇧K in an app turned off.
+            return self.settings.mode(for: self.watcher.frontBundleID) != .off
+        }
+    }
+
+    // MARK: rewrite (⌘⇧K)
+
+    private func openRewrite() {
+        guard #available(macOS 26.0, *), RewriteEngine.shared.isAvailable else {
+            TransientNotice.show(
+                "Rewrite needs Apple Intelligence enabled on this Mac",
+                nearAXRect: mouseAXRect())
+            return
+        }
+        let report = readFocused()
+        guard let selection = report.selectedText,
+              !selection.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            TransientNotice.show(
+                "Select some text, then press \u{2318}\u{21E7}K",
+                nearAXRect: mouseAXRect())
+            return
+        }
+        rewritePanel.open(span: selection, near: NSEvent.mouseLocation)
+    }
+
+    /// A small AX-coordinate rect at the mouse for anchoring notices.
+    private func mouseAXRect() -> CGRect {
+        let cocoa = NSEvent.mouseLocation
+        let screenHeight = NSScreen.screens.first?.frame.height ?? 0
+        return CGRect(x: cocoa.x, y: screenHeight - cocoa.y, width: 1, height: 20)
+    }
+
+    // MARK: scroll fluency
+
+    private func repositionAfterScroll() {
+        guard !overlay.marks.isEmpty || card.isOpen else { return }
+        card.close()  // its anchor moved; reopening is one click away
+        guard let surface = activeSurface, !lastIssues.isEmpty else {
+            overlay.hide()
+            return
+        }
+        // Throttle: scroll events arrive in bursts; bounds are 0-5 ms each,
+        // but there is no reason to recompute more than ~12x/second.
+        guard Date().timeIntervalSince(lastReposition) > 0.08 else { return }
+        lastReposition = Date()
+        guard watcher.surfaceStillFocused() else {
+            watcherDidInvalidate()
+            return
+        }
+        let marks: [UnderlineMark] = lastIssues.compactMap { issue in
+            guard !dismissed.contains(dismissKey(issue)) else { return nil }
+            let rects = surface.bounds(for: issue.utf16Range)
+            guard !rects.isEmpty else { return nil }
+            return UnderlineMark(issue: issue, rects: rects)
+        }
+        overlay.show(marks: marks, clippedTo: surface.visibleFrame())
+    }
+
+    // MARK: soak metrics (AC-11 evidence)
+
+    private func startMetrics() {
+        metricsTimer = Timer.scheduledTimer(withTimeInterval: 900, repeats: true) { _ in
+            let mb = Self.residentMB()
+            let line = "\(ISO8601DateFormatter().string(from: Date())) rss=\(mb)MB\n"
+            let dir = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library/Logs/SophiaWrite", isDirectory: true)
+            try? FileManager.default.createDirectory(
+                at: dir, withIntermediateDirectories: true)
+            let url = dir.appendingPathComponent("metrics.log")
+            if let handle = try? FileHandle(forWritingTo: url) {
+                handle.seekToEndOfFile()
+                handle.write(Data(line.utf8))
+                try? handle.close()
+            } else {
+                try? Data(line.utf8).write(to: url)
+            }
+        }
+    }
+
+    private static func residentMB() -> Int {
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(
+            MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+            }
+        }
+        guard result == KERN_SUCCESS else { return -1 }
+        return Int(info.resident_size / 1_048_576)
     }
 
     private func togglePause() {
@@ -262,6 +384,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func openCard(for mark: UnderlineMark) {
         guard let rect = mark.rects.first else { return }
+        if #available(macOS 26.0, *) {
+            card.explainEnabled = RewriteEngine.shared.isAvailable
+        } else {
+            card.explainEnabled = false
+        }
         // A sentence with several fixable issues gets the diff card with one
         // Fix Sentence action; a lone issue keeps the small card.
         if let group = sentenceGroups.first(where: { $0.issues.contains(mark.issue) }),
@@ -329,6 +456,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard !rects.isEmpty else { return nil }
                 return UnderlineMark(issue: issue, rects: rects)
             }
+            self.lastIssues = issues
             self.sentenceGroups = SentenceGrouper.groups(
                 text: text, issues: marks.map(\.issue))
             self.overlay.show(marks: marks, clippedTo: surface.visibleFrame())
@@ -346,6 +474,7 @@ extension AppDelegate: AXWatcherDelegate {
     func watcherDidInvalidate() {
         lint.cancelPending()
         sentenceGroups = []
+        lastIssues = []
         overlay.hide()
         card.close()  // typing while a card is open abandons the edit (AC-7)
     }
@@ -438,12 +567,85 @@ extension AppDelegate: SuggestionCardDelegate {
         watcher.refocus()
     }
 
+    func cardWantsExplanation(_ issue: Issue) {
+        guard #available(macOS 26.0, *), let replacement = issue.replacement else {
+            card.updateMessage(issue.message)
+            return
+        }
+        Task { @MainActor in
+            do {
+                let why = try await RewriteEngine.shared.explain(
+                    anchor: issue.anchor_text, replacement: replacement,
+                    message: issue.message)
+                // Only speak if the card still shows this issue.
+                if self.card.issue == issue {
+                    self.card.updateMessage(why)
+                }
+            } catch {
+                if self.card.issue == issue {
+                    self.card.updateMessage(issue.message)
+                }
+            }
+        }
+    }
+
     func cardAddedToDictionary(_ issue: Issue) {
         dictionary.add(issue.anchor_text.trimmingCharacters(
             in: CharacterSet.alphanumerics.inverted))
         card.close()
         watcher.refocus()  // AC-9: the flag disappears on the next pass
     }
+}
+
+// MARK: - RewritePanelDelegate
+
+extension AppDelegate: RewritePanelDelegate {
+    func rewritePanel(_ panel: RewritePanel, run mode: RewriteMode, custom: String?) {
+        guard #available(macOS 26.0, *) else { return }
+        let span = panel.span
+        panel.showGenerating(custom ?? mode.rawValue)
+        Task { @MainActor in
+            do {
+                let raw = try await RewriteEngine.shared.rewrite(
+                    span, mode: mode, custom: custom)
+                // The guards own the verdict; a custom instruction gets the
+                // loosest bounds (professional's).
+                switch RewriteGuards.inspect(
+                    original: span, rewritten: raw, mode: custom == nil ? mode : .professional)
+                {
+                case .ok(let final, let hunks):
+                    panel.showDiff(original: span, final: final, hunks: hunks)
+                case .rejected(let reason):
+                    panel.showRejected(reason)
+                }
+            } catch {
+                panel.showRejected("The model could not respond. Try again.")
+                dlog("rewrite failed: \(error)")
+            }
+        }
+    }
+
+    func rewritePanelAccept(_ panel: RewritePanel) {
+        guard let final = panel.result else { return }
+        // Re-verify the selection is still exactly the span we rewrote — if
+        // the user touched it while reviewing, abandon (AC-7's principle).
+        let report = readFocused()
+        guard report.selectedText == panel.span else {
+            panel.showRejected("The selection changed — nothing applied.")
+            return
+        }
+        panel.close()
+        let result = InsertionEngine().insert(final)
+        if !result.inserted {
+            TransientNotice.show(
+                "Couldn't apply here — rewrite is on the clipboard (\u{2318}V)",
+                nearAXRect: mouseAXRect())
+        }
+        dlog("rewrite applied via \(result.strategy.rawValue), verify=\(result.verification.rawValue)")
+        watcher.refocus()
+    }
+
+    func rewritePanelClosed(_ panel: RewritePanel) {}
 }
 
 // MARK: - menu

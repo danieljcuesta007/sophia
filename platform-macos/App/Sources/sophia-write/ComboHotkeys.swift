@@ -15,6 +15,10 @@ final class ComboHotkeys {
     var onAddToDictionary: (() -> Void)?
     var onTogglePause: (() -> Void)?
     var onEscape: (() -> Void)?
+    var onRewrite: (() -> Void)?
+    /// Whether ⌘⇧K is Sophia's in the frontmost app (not paused, app not off,
+    /// rewrite engine present). Read on the tap thread — must be cheap.
+    var rewriteEnabled: () -> Bool = { false }
     /// Governs Escape consumption; read on the tap thread (main run loop).
     var cardIsOpen: () -> Bool = { false }
     /// Conflict policy (blueprint §16): a chord is consumed only when Sophia has
@@ -26,6 +30,7 @@ final class ComboHotkeys {
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
 
+    private static let kK: Int64 = 40
     private static let kSemicolon: Int64 = 41
     private static let kQuote: Int64 = 39
     private static let kD: Int64 = 2
@@ -74,6 +79,10 @@ final class ComboHotkeys {
         let optShift = flags.contains(.maskAlternate) && flags.contains(.maskShift)
             && !flags.contains(.maskCommand) && !flags.contains(.maskControl)
 
+        if cmdShift, keyCode == Self.kK, rewriteEnabled() {
+            DispatchQueue.main.async { self.onRewrite?() }
+            return nil
+        }
         if cmdShift, keyCode == Self.kSemicolon, hasMarks() {
             DispatchQueue.main.async { self.onNextIssue?() }
             return nil
