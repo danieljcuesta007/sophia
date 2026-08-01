@@ -38,6 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let overlay = OverlayController()
     private let card = SuggestionCard()
     private let hotkeys = ComboHotkeys()
+    private let statusWindow = StatusWindow()
 
     private var statusItem: NSStatusItem?
     private var clickMonitor: Any?
@@ -80,7 +81,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         trustPoll = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
             self?.pollTrust()
         }
+        // The Dock click opens the window; a launch from the Dock should feel
+        // the same. (Launch at Login also passes here — acceptable until
+        // login-launch detection earns its complexity.)
+        statusWindow.show(status: currentStatusLine())
         dlog("launched; trusted=\(wasTrusted)")
+    }
+
+    /// Clicking the Dock icon while running (LSUIElement apps get this when
+    /// re-opened from Finder/Dock): show the window.
+    func applicationShouldHandleReopen(
+        _ sender: NSApplication, hasVisibleWindows flag: Bool
+    ) -> Bool {
+        statusWindow.show(status: currentStatusLine())
+        return true
+    }
+
+    private func currentStatusLine() -> String {
+        if !wasTrusted {
+            return "Needs Accessibility permission — grant it in Privacy & Security."
+        }
+        if settings.paused { return "Paused. \u{2325}\u{21E7}P resumes." }
+        return "Watching. Focus any text field, pause typing, and suggestions underline."
     }
 
     private func pollTrust() {
@@ -476,6 +498,9 @@ extension AppDelegate: NSMenuDelegate {
 
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(
+            title: "Open Sophia Window", action: #selector(openWindow),
+            keyEquivalent: ""))
+        menu.addItem(NSMenuItem(
             title: "Open Dictionary File", action: #selector(openDictionary),
             keyEquivalent: ""))
 
@@ -508,6 +533,10 @@ extension AppDelegate: NSMenuDelegate {
         overlay.hide()
         card.close()
         watcher.refocus()
+    }
+
+    @objc private func openWindow() {
+        statusWindow.show(status: currentStatusLine())
     }
 
     @objc private func openDictionary() {

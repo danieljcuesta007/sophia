@@ -46,3 +46,11 @@ echo ""
 echo "==> packaged: $APP"
 shasum -a 256 "$APP/Contents/MacOS/sophia-write" | cut -c1-16
 "$APP/Contents/MacOS/sophia-write" selftest | tail -1
+
+# Install to ~/Applications (user-level; no admin needed) so the Dock, Login
+# Items, and TCC all point at one stable path across rebuilds.
+INSTALL="$HOME/Applications/Sophia Write.app"
+mkdir -p "$HOME/Applications"
+rm -rf "$INSTALL"
+cp -R "$APP" "$INSTALL"
+echo "==> installed: $INSTALL"
