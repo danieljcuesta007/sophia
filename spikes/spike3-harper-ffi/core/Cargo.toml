@@ -1,0 +1,22 @@
+[package]
+name = "sophia-core-spike"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+name = "sophia_core_spike"
+# staticlib for the Swift shell; rlib so the FFI surface stays testable from Rust.
+# No cdylib — Cadence's core/ffi records that with both present the Swift linker
+# preferred the dylib and bound the app to an absolute dev-tree path.
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+# "concurrent" makes LintGroup Send+Sync (Arc-backed) so it can live behind a
+# global Mutex and be driven from the shell's worker queue.
+harper-core = { version = "2.7", features = ["concurrent"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+lto = true

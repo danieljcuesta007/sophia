@@ -10,3 +10,10 @@ result-*.json
 *.o
 .DS_Store
 # test pages are fine to commit
+
+# Rust
+spikes/**/target/
+target/
+Cargo.lock
+# spike binaries
+spikes/**/lint-test
