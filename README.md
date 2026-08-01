@@ -22,6 +22,17 @@ Spec: see the companion blueprint repo (`sophia-write-blueprint`). Current statu
 - Accessibility permission for any probe or the eventual agent
 - Rust toolchain (Phase 0 Spike 3 onward)
 
+## Roadmap: deferred candidates
+
+- **NotchPresence** (`~/notch-presence`, single-file Swift, MIT) — ambient activity
+  signal in the camera notch. Deferred to Phase 3+: Sophia's current workloads are too
+  fast to drive it honestly (Harper lints in <50 ms, warm rewrites in ~0.6 s), so today
+  it would be decorative. Adopt when a long-running ambient process exists (style-profile
+  learning, batch document review), driven by that progress as the 0–1 signal. Rules if
+  it ships: it is the host's *only* activity signal (the ⌘⇧K panel loses its spinner),
+  accent `#3F8A4F`, retune `bloomFloor` (0.12 is mic-RMS-tuned), verify by logging
+  `phaseName` at session end — not by eye.
+
 ## Principles
 
 - Never corrupt the user's document; every ambiguity resolves to doing nothing.
