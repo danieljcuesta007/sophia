@@ -112,17 +112,75 @@ def spark():
     )
 
 
+def bezier(p0, p1, p2, p3, t):
+    """Point and tangent angle (deg) on a cubic at t."""
+    u = 1 - t
+    x = u**3 * p0[0] + 3 * u**2 * t * p1[0] + 3 * u * t**2 * p2[0] + t**3 * p3[0]
+    y = u**3 * p0[1] + 3 * u**2 * t * p1[1] + 3 * u * t**2 * p2[1] + t**3 * p3[1]
+    dx = 3 * u**2 * (p1[0] - p0[0]) + 6 * u * t * (p2[0] - p1[0]) + 3 * t**2 * (p3[0] - p2[0])
+    dy = 3 * u**2 * (p1[1] - p0[1]) + 6 * u * t * (p2[1] - p1[1]) + 3 * t**2 * (p3[1] - p2[1])
+    return x, y, math.degrees(math.atan2(dy, dx))
+
+
+def veined_leaf(x, y, angle_deg, length, width):
+    """A leaf with a paper vein down its center — botanical, not thorn-like."""
+    return (
+        f'<g transform="translate({x:.1f},{y:.1f}) rotate({angle_deg:.1f})">'
+        f'<path d="M0,0 Q{width / 2:.1f},{-length * 0.52:.1f} 0,{-length:.1f} '
+        f'Q{-width / 2:.1f},{-length * 0.52:.1f} 0,0 Z" fill="{INK}"/>'
+        f'<path d="M0,{-length * 0.12:.1f} L0,{-length * 0.82:.1f}" '
+        f'stroke="{PAPER}" stroke-width="5" stroke-linecap="round" opacity="0.85"/>'
+        f"</g>"
+    )
+
+
+# The sapling: an upright stem with a whisper of an S in its sway — growth,
+# not serpent. One cubic bottom-to-tip; leaves in near-pairs; a gold bud crown.
+STEM = ((540, 706), (462, 600), (562, 452), (506, 332))
+
+
+def branch():
+    parts = []
+    p0, p1, p2, p3 = STEM
+    parts.append(
+        f'<path d="M{p0[0]},{p0[1]} C{p1[0]},{p1[1]} {p2[0]},{p2[1]} {p3[0]},{p3[1]}" '
+        f'fill="none" stroke="{INK}" stroke-width="26" stroke-linecap="round"/>'
+    )
+    # Leaf nodes: (t along stem, side, scale). Pairs are slightly staggered the
+    # way real phyllotaxis is; sizes taper toward the crown.
+    nodes = [
+        (0.16, -1, 1.00), (0.24, +1, 0.96),
+        (0.42, -1, 0.92), (0.50, +1, 0.88),
+        (0.66, -1, 0.76), (0.74, +1, 0.68),
+    ]
+    for t, side, scale in nodes:
+        x, y, ang = bezier(p0, p1, p2, p3, t)
+        # How far the stem leans off vertical here (moving tip-ward means
+        # dy < 0, so a vertical stem reports -90).
+        lean = ang + 90
+        tilt = lean + side * 56  # leaves reach up and well outward
+        parts.append(veined_leaf(x, y, tilt, length=132 * scale, width=60 * scale))
+    # The bud crowning the tip — gold, the divine touch as part of the growth.
+    # Nearly vertical regardless of the stem's final lean: a bud reaches for
+    # the light, and it must not collide with the crown leaves.
+    tx, ty, tang = bezier(p0, p1, p2, p3, 1.0)
+    # Tip-ward travel reports ~-90 when vertical; damp only the deviation.
+    lean = (tang + 90) * 0.35
+    parts.append(
+        f'<g transform="translate({tx:.1f},{ty:.1f}) rotate({lean:.1f})">'
+        f'<path d="M0,12 Q30,-34 0,-92 Q-30,-34 0,12 Z" fill="{GOLD}"/>'
+        f"</g>"
+    )
+    return "".join(parts)
+
+
 def emblem():
-    """Everything inside the paper: rings, S, laurel, spark."""
+    """Everything inside the paper: rings, spark, and the S-branch."""
     return (
         # Double ring, thin — a seal, not a badge.
         f'<circle cx="512" cy="512" r="318" fill="none" stroke="{GOLD}" stroke-width="10"/>'
         f'<circle cx="512" cy="512" r="292" fill="none" stroke="{GOLD}" stroke-width="3.5" opacity="0.75"/>'
-        + laurel(-1) + laurel(1) + spark() +
-        # The S: Didot, the most graceful serif shipped with macOS.
-        f'<text x="512" y="512" font-family="Didot, \'Bodoni 72\', serif" '
-        f'font-size="470" font-weight="700" fill="{INK}" text-anchor="middle" '
-        f'dominant-baseline="central" dy="18">S</text>'
+        + spark() + branch()
     )
 
 

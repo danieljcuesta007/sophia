@@ -275,27 +275,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             button.alphaValue = 1
             return
         }
-        button.image = Self.sGlyph
+        button.image = Self.leafGlyph
         button.alphaValue = settings.paused ? 0.4 : 1.0
     }
 
-    private static let sGlyph: NSImage = {
-        let size = NSSize(width: 18, height: 18)
-        let image = NSImage(size: size, flipped: false) { rect in
-            let font = NSFont(name: "Didot-Bold", size: 15)
-                ?? NSFont.systemFont(ofSize: 15, weight: .bold)
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: font, .foregroundColor: NSColor.black,
-            ]
-            let s = NSAttributedString(string: "S", attributes: attrs)
-            let bounds = s.boundingRect(with: rect.size)
-            s.draw(at: NSPoint(
-                x: (rect.width - bounds.width) / 2,
-                y: (rect.height - bounds.height) / 2 - bounds.origin.y))
-            return true
-        }
+    /// The brand is a growing leaf (the seal's sapling); the menu bar carries
+    /// the same idea as a template glyph.
+    private static let leafGlyph: NSImage = {
+        let image = NSImage(
+            systemSymbolName: "leaf", accessibilityDescription: "Sophia Write")
+            ?? NSImage()
         image.isTemplate = true
-        image.accessibilityDescription = "Sophia Write"
         return image
     }()
 
@@ -368,16 +358,34 @@ extension AppDelegate: SuggestionCardDelegate {
             card.close()
             return
         }
+        let anchor = overlay.marks.first { $0.issue == issue }?.rects.first
         let outcome = Acceptor.accept(issue: issue, surface: surface)
         card.close()
+        handle(outcome, replacementText: issue.replacement, anchor: anchor)
+        watcher.refocus()
+    }
+
+    /// Shared accept aftermath. Selection failure means this field can't be
+    /// edited in place (WebKit today) — park the fix on the clipboard and say
+    /// so; the words are one ⌘V away, never lost. Text-moved stays silent by
+    /// contract (the user is typing; the underline will re-settle).
+    private func handle(_ outcome: AcceptOutcome, replacementText: String?,
+                        anchor: CGRect?) {
         switch outcome {
         case .applied(let result):
             dlog("applied via \(result.strategy.rawValue), verify=\(result.verification.rawValue)")
-        case .abandonedTextMoved, .abandonedSelectionFailed, .abandonedNoReplacement:
-            // Every ambiguity resolves to doing nothing; the underline stays.
+        case .abandonedSelectionFailed:
+            if let replacementText, let anchor {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(replacementText, forType: .string)
+                TransientNotice.show(
+                    "Can't edit here in place — fix copied, paste with \u{2318}V",
+                    nearAXRect: anchor)
+            }
+            dlog("accept abandoned: selection failed")
+        case .abandonedTextMoved, .abandonedNoReplacement:
             dlog("accept abandoned: \(outcome)")
         }
-        watcher.refocus()
     }
 
     func cardAcceptedGroup(_ group: SentenceGroup) {
@@ -385,14 +393,12 @@ extension AppDelegate: SuggestionCardDelegate {
             card.close()
             return
         }
+        let anchor = overlay.marks
+            .first { group.issues.contains($0.issue) }?.rects.first
         let outcome = Acceptor.accept(group: group, surface: surface)
         card.close()
-        switch outcome {
-        case .applied(let result):
-            dlog("sentence fixed via \(result.strategy.rawValue), verify=\(result.verification.rawValue)")
-        case .abandonedTextMoved, .abandonedSelectionFailed, .abandonedNoReplacement:
-            dlog("sentence fix abandoned: \(outcome)")
-        }
+        handle(outcome, replacementText: SentenceGrouper.corrected(group),
+               anchor: anchor)
         watcher.refocus()
     }
 
