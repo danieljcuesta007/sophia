@@ -140,10 +140,18 @@ final class FlatTextSurface: TextSurface {
     }
 
     func bounds(for range: NSRange) -> [CGRect] {
-        // Query per-line segments: a range that wraps returns a union box from
-        // some apps, so split on the anchor's length in modest chunks. One call
-        // first — if the rect looks single-line, use it.
         guard let whole = AX.boundsForRange(element, range) else { return [] }
+        // Node-box trap (Spike 1): some hosts return the element's whole frame
+        // for any range. A "per-range" rect that fills most of the element is
+        // bogus — no underline beats a wrong one.
+        if let frame = AX.frame(element),
+           whole.width > frame.width * 0.9, whole.height > frame.height * 0.9,
+           frame.width > 100 {
+            return []
+        }
+        // An anchor is a few words; a rect taller than a couple of wrapped
+        // lines is not text bounds.
+        guard whole.height <= 80 else { return [] }
         return [whole]
     }
 

@@ -60,10 +60,16 @@ final class OverlayController {
     }
 
     private func clip(_ marks: [UnderlineMark], to visible: CGRect?) -> [UnderlineMark] {
-        guard let visible else { return marks }
-        // Spike-1 trap 5: scrolled-away text returns unusable rects.
+        // Spike-1 trap 5: scrolled-away text returns unusable rects. Without a
+        // visible frame nothing can be validated — draw nothing.
+        guard let visible else { return [] }
         return marks.compactMap { mark in
-            let kept = mark.rects.filter { visible.intersects($0) && $0.minY >= 0 }
+            // Clip each rect to the element's visible frame, not just test
+            // intersection — a rect poking past the edge must not draw there.
+            let kept = mark.rects
+                .filter { $0.minY >= 0 }
+                .map { $0.intersection(visible) }
+                .filter { !$0.isEmpty && $0.width > 0.5 && $0.height > 0.5 }
             return kept.isEmpty ? nil : UnderlineMark(issue: mark.issue, rects: kept)
         }
     }

@@ -40,6 +40,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusItem: NSStatusItem?
     private var clickMonitor: Any?
+    private var scrollMonitor: Any?
+    /// Belt-and-braces sweep: if focus moved without a notification we caught,
+    /// stale marks get at most this long to live.
+    private var validityTimer: Timer?
     private var trustPoll: Timer?
     private var wasTrusted = false
     /// The surface the current marks belong to; accepts must use the same one.
@@ -97,6 +101,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) {
                 [weak self] _ in
                 self?.handleGlobalClick()
+            }
+        }
+        if scrollMonitor == nil {
+            // AX has no scroll notification, so any scroll anywhere makes every
+            // mark position suspect: hide immediately, re-settle after the pause.
+            scrollMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.scrollWheel]) {
+                [weak self] _ in
+                guard let self, !self.overlay.marks.isEmpty || self.card.isOpen else { return }
+                self.watcher.noteScrolled()
+            }
+        }
+        if validityTimer == nil {
+            validityTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) {
+                [weak self] _ in
+                guard let self, !self.overlay.marks.isEmpty else { return }
+                if !self.watcher.surfaceStillFocused() {
+                    dlog("validity sweep: focus moved — tearing down marks")
+                    self.watcherDidInvalidate()
+                    self.watcher.refocus()
+                }
             }
         }
     }
@@ -238,6 +262,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let started = Date()
         lint.lint(text) { [weak self] issues in
             guard let self, self.activeSurface === surface else { return }
+            // Draw-time guard: if focus moved while we were linting, these
+            // positions belong to a field that is no longer on screen.
+            guard self.watcher.surfaceStillFocused() else {
+                dlog("lint result dropped: focus moved before draw")
+                return
+            }
             let marks: [UnderlineMark] = issues.compactMap { issue in
                 let rects = surface.bounds(for: issue.utf16Range)
                 guard !rects.isEmpty else { return nil }

@@ -66,7 +66,10 @@ final class AXWatcher {
         }
 
         // AC-8: secure fields get nothing — no observer, no surface, no UI.
-        if AX.string(element, kAXSubroleAttribute) == "AXSecureTextField" {
+        // Search boxes get nothing either: half-typed queries are not prose,
+        // and marks over a browser page read as noise (dogfood 8/01).
+        let subrole = AX.string(element, kAXSubroleAttribute)
+        if subrole == "AXSecureTextField" || subrole == "AXSearchField" {
             toIdle()
             delegate?.watcher(self, focusChanged: frontBundleID, lintable: false)
             return
@@ -94,10 +97,32 @@ final class AXWatcher {
     // MARK: notifications
 
     @objc private func appActivated(_ note: Notification) {
-        // The focused element settles a beat after activation.
+        // Hide everything NOW — stale underlines painted over the new app are
+        // worse than a briefly missing mark — then re-resolve once focus settles.
+        delegate?.watcherDidInvalidate()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
             self?.refocus()
         }
+    }
+
+    /// The user scrolled somewhere. AX sends no scroll notification, so every
+    /// mark position is now suspect: hide, then re-settle.
+    func noteScrolled() {
+        guard surface != nil else { return }
+        delegate?.watcherDidInvalidate()
+        scheduleSettle()
+    }
+
+    /// True when the system-focused element is still the one our surface wraps.
+    /// Guards against missed focus notifications before anything is drawn.
+    func surfaceStillFocused() -> Bool {
+        guard let surface else { return false }
+        guard let focused = AX.focusedElement() else { return false }
+        if CFEqual(focused, surface.element) { return true }
+        // WebKit surfaces wrap an ancestor web area of the focused element;
+        // same pid is the honest check we have there.
+        return AX.pid(focused) != nil && AX.pid(focused) == AX.pid(surface.element)
+            && surface is WebKitTextSurface
     }
 
     private func observe(element: AXUIElement) {
