@@ -42,4 +42,27 @@ enum Acceptor {
         let result = InsertionEngine().insert(replacement)
         return .applied(result)
     }
+
+    /// Fix a whole sentence in one insertion: same contract, one anchor (the
+    /// sentence), one selection, one undo unit. Safer than issue-by-issue —
+    /// there is no intermediate state where offsets have shifted.
+    static func accept(group: SentenceGroup, surface: TextSurface) -> AcceptOutcome {
+        let fixed = SentenceGrouper.corrected(group)
+        guard fixed != group.sentence else { return .abandonedNoReplacement }
+
+        guard let current = surface.readText() else { return .abandonedTextMoved }
+        let ns = current as NSString
+        guard group.range.location + group.range.length <= ns.length,
+              ns.substring(with: group.range) == group.sentence
+        else {
+            return .abandonedTextMoved
+        }
+
+        guard surface.select(range: group.range, expecting: group.sentence) else {
+            return .abandonedSelectionFailed
+        }
+
+        let result = InsertionEngine().insert(fixed)
+        return .applied(result)
+    }
 }

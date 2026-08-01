@@ -60,6 +60,20 @@ enum SelfTest {
             .contains { $0.anchor_text == "Addisuna" }
         check("dictionary suppresses spelling flag", flaggedBare && suppressed)
 
+        // Sentence card: grouping + corrected-sentence builder over real lint
+        // output. Every fixable issue lands in one group and one insertion.
+        let groups = SentenceGrouper.groups(text: regression, issues: issues)
+        check("regression sentence forms one group", groups.count == 1,
+              "\(groups.count) groups")
+        if let group = groups.first {
+            let fixed = SentenceGrouper.corrected(group)
+            let expectations = ["They're", "I think", "whether", "should have", "quarter"]
+            check("corrected sentence applies all fixes",
+                  expectations.allSatisfy { fixed.contains($0) }
+                      && !fixed.contains("quater"),
+                  fixed)
+        }
+
         // Stores: settings round-trip + per-app mode logic (AC-10 logic half).
         let settings = SettingsStore()
         check("password manager denied by default",

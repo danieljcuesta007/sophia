@@ -44,6 +44,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var wasTrusted = false
     /// The surface the current marks belong to; accepts must use the same one.
     private var activeSurface: TextSurface?
+    /// Sentence clusters for the current marks (drives the sentence-diff card).
+    private var sentenceGroups: [SentenceGroup] = []
     private var lastFocusDescription = "No text field focused"
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -109,8 +111,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotkeys.onTogglePause = { [weak self] in self?.togglePause() }
         hotkeys.onNextIssue = { [weak self] in self?.jumpToNextIssue() }
         hotkeys.onAccept = { [weak self] in
-            guard let self, let issue = self.card.issue else { return }
-            self.cardAccepted(issue)
+            guard let self else { return }
+            if let group = self.card.group {
+                self.cardAcceptedGroup(group)
+            } else if let issue = self.card.issue {
+                self.cardAccepted(issue)
+            }
         }
         hotkeys.onAddToDictionary = { [weak self] in self?.addWordNearCaret() }
     }
@@ -199,7 +205,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func openCard(for mark: UnderlineMark) {
         guard let rect = mark.rects.first else { return }
-        card.show(issue: mark.issue, nearAXRect: rect)
+        // A sentence with several fixable issues gets the diff card with one
+        // Fix Sentence action; a lone issue keeps the small card.
+        if let group = sentenceGroups.first(where: { $0.issues.contains(mark.issue) }),
+           group.fixableCount > 1 {
+            card.show(group: group, nearAXRect: rect)
+        } else {
+            card.show(issue: mark.issue, nearAXRect: rect)
+        }
     }
 
     // MARK: status item
@@ -230,6 +243,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 guard !rects.isEmpty else { return nil }
                 return UnderlineMark(issue: issue, rects: rects)
             }
+            self.sentenceGroups = SentenceGrouper.groups(
+                text: text, issues: marks.map(\.issue))
             self.overlay.show(marks: marks, clippedTo: surface.visibleFrame())
             dlog(
                 "marked \(marks.count)/\(issues.count) issues in "
@@ -243,6 +258,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 extension AppDelegate: AXWatcherDelegate {
     func watcherDidInvalidate() {
         lint.cancelPending()
+        sentenceGroups = []
         overlay.hide()
         card.close()  // typing while a card is open abandons the edit (AC-7)
     }
@@ -285,6 +301,22 @@ extension AppDelegate: SuggestionCardDelegate {
         case .abandonedTextMoved, .abandonedSelectionFailed, .abandonedNoReplacement:
             // Every ambiguity resolves to doing nothing; the underline stays.
             dlog("accept abandoned: \(outcome)")
+        }
+        watcher.refocus()
+    }
+
+    func cardAcceptedGroup(_ group: SentenceGroup) {
+        guard let surface = activeSurface else {
+            card.close()
+            return
+        }
+        let outcome = Acceptor.accept(group: group, surface: surface)
+        card.close()
+        switch outcome {
+        case .applied(let result):
+            dlog("sentence fixed via \(result.strategy.rawValue), verify=\(result.verification.rawValue)")
+        case .abandonedTextMoved, .abandonedSelectionFailed, .abandonedNoReplacement:
+            dlog("sentence fix abandoned: \(outcome)")
         }
         watcher.refocus()
     }
