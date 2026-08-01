@@ -18,10 +18,13 @@ import sys
 
 OUT = os.path.dirname(os.path.abspath(__file__))
 
-PAPER = "#101711"     # near-black with a green cast — modern tech ground
-INK = "#54B368"       # Sophia green, lifted to glow on the dark ground
-INK_DEEP = "#3F8A4F"  # the brand green proper (edges, hairlines)
-GOLD = "#D9AE52"      # gold, brightened for dark ground — the bud and spark
+# The Cadence family language: white ground, near-black rounded capsules,
+# exactly one green voice. Sophia inverts the accent — the STEM is the green
+# element, the leaves are the dark ones.
+PAPER = "#FCFCFD"     # white ground, as Cadence
+INK = "#3F8A4F"       # the brand green — the stem and the light
+DARK = "#2A2E35"      # Cadence's near-black, for the leaves
+INK_DEEP = "#B9BEC2"  # neutral hairline edge, as Cadence — never a colored ring
 
 CANVAS = 1024
 BODY = 824
@@ -52,134 +55,49 @@ def squircle_path(size=BODY, cx=CANVAS / 2, cy=CANVAS / 2, steps=720):
     return "M" + "L".join(pts) + "Z"
 
 
-def leaf(x, y, angle_deg, length=54, width=20, fill=GOLD):
-    """A pointed laurel leaf: two quadratic arcs base->tip, rotated in place."""
-    return (
-        f'<path d="M0,0 Q{width / 2:.1f},{-length / 2:.1f} 0,{-length} '
-        f'Q{-width / 2:.1f},{-length / 2:.1f} 0,0 Z" fill="{fill}" '
-        f'transform="translate({x:.1f},{y:.1f}) rotate({angle_deg:.1f})"/>'
-    )
-
-
-def laurel(side):
-    """One sprig: a stem arcing up the lower quarter of the ring, leaves
-    alternating along it. side=-1 left, +1 right."""
-    r = 268  # stem radius, inside the inner ring
-    cx, cy = 512, 512
-    parts = []
-    # Stem: arc from near bottom-center up to ~48 degrees on this side.
-    a0, a1 = math.radians(96), math.radians(38)
-    p0 = (cx + side * r * math.sin(a1), cy + r * math.cos(a1))
-    p1 = (cx + side * r * math.sin(a0), cy + r * math.cos(a0))
-    parts.append(
-        f'<path d="M{p1[0]:.1f},{p1[1]:.1f} A{r},{r} 0 0 {1 if side > 0 else 0} '
-        f'{p0[0]:.1f},{p0[1]:.1f}" fill="none" stroke="{GOLD}" '
-        f'stroke-width="9" stroke-linecap="round"/>'
-    )
-    # Paired leaves hugging the stem — a real sprig, not thorns. Each node has
-    # an outer and an inner leaf leaning up the stem's direction of travel.
-    for i in range(4):
-        a = math.radians(86 - i * 15)
-        lx = cx + side * r * math.sin(a)
-        ly = cy + r * math.cos(a)
-        # Stem tangent at this node, pointing "up the sprig".
-        tangent = -side * (90 - math.degrees(a))
-        scale = 1.0 - i * 0.08
-        parts.append(leaf(lx, ly, tangent - side * 30,
-                          length=62 * scale, width=24 * scale))
-        parts.append(leaf(lx, ly, tangent + side * 34,
-                          length=52 * scale, width=21 * scale))
-    # Tip leaf pointing along the stem's end.
-    a_tip = math.radians(34)
-    tx = cx + side * r * math.sin(a_tip)
-    ty = cy + r * math.cos(a_tip)
-    parts.append(leaf(tx, ty, -side * (90 - math.degrees(a_tip)),
-                      length=56, width=20))
-    return "".join(parts)
-
-
-def spark():
-    """A small four-point star hovering above the bud — the light it grows
-    toward."""
-    cx, cy, R, r = 496, 178, 34, 10.5
-    pts = []
-    for i in range(8):
-        rad = R if i % 2 == 0 else r
-        a = math.pi / 4 * i - math.pi / 2
-        pts.append(f"{cx + rad * math.cos(a):.1f},{cy + rad * math.sin(a):.1f}")
-    return f'<polygon points="{" ".join(pts)}" fill="{GOLD}"/>'
-
-
-def bezier(p0, p1, p2, p3, t):
-    """Point and tangent angle (deg) on a cubic at t."""
-    u = 1 - t
-    x = u**3 * p0[0] + 3 * u**2 * t * p1[0] + 3 * u * t**2 * p2[0] + t**3 * p3[0]
-    y = u**3 * p0[1] + 3 * u**2 * t * p1[1] + 3 * u * t**2 * p2[1] + t**3 * p3[1]
-    dx = 3 * u**2 * (p1[0] - p0[0]) + 6 * u * t * (p2[0] - p1[0]) + 3 * t**2 * (p3[0] - p2[0])
-    dy = 3 * u**2 * (p1[1] - p0[1]) + 6 * u * t * (p2[1] - p1[1]) + 3 * t**2 * (p3[1] - p2[1])
-    return x, y, math.degrees(math.atan2(dy, dx))
-
-
-def veined_leaf(x, y, angle_deg, length, width):
-    """A leaf with a paper vein down its center — botanical, not thorn-like."""
+def capsule(x, y, angle_deg, length, width, fill):
+    """A rounded capsule (Cadence's shape vocabulary) extending from (x, y)
+    along `angle_deg` (SVG rotation: 0 = +x, negative = upward)."""
+    r = width / 2
     return (
         f'<g transform="translate({x:.1f},{y:.1f}) rotate({angle_deg:.1f})">'
-        f'<path d="M0,0 Q{width / 2:.1f},{-length * 0.52:.1f} 0,{-length:.1f} '
-        f'Q{-width / 2:.1f},{-length * 0.52:.1f} 0,0 Z" fill="{INK}"/>'
-        f'<path d="M0,{-length * 0.12:.1f} L0,{-length * 0.82:.1f}" '
-        f'stroke="{PAPER}" stroke-width="5" stroke-linecap="round" opacity="0.85"/>'
+        f'<rect x="0" y="{-r:.1f}" width="{length:.1f}" height="{width:.1f}" '
+        f'rx="{r:.1f}" fill="{fill}"/>'
         f"</g>"
     )
 
 
-# The sapling: an upright stem with a whisper of an S in its sway — growth,
-# not serpent. One cubic bottom-to-tip; leaves in near-pairs; a gold bud crown.
-STEM = ((540, 706), (462, 600), (562, 452), (506, 332))
-
-
-def branch():
-    parts = []
-    p0, p1, p2, p3 = STEM
-    parts.append(
-        f'<path d="M{p0[0]},{p0[1]} C{p1[0]},{p1[1]} {p2[0]},{p2[1]} {p3[0]},{p3[1]}" '
-        f'fill="none" stroke="{INK}" stroke-width="26" stroke-linecap="round"/>'
-    )
-    # Leaf nodes: (t along stem, side, scale). Pairs are slightly staggered the
-    # way real phyllotaxis is; sizes taper toward the crown.
-    nodes = [
-        (0.16, -1, 1.00), (0.24, +1, 0.96),
-        (0.42, -1, 0.92), (0.50, +1, 0.88),
-        (0.66, -1, 0.76), (0.74, +1, 0.68),
-    ]
-    for t, side, scale in nodes:
-        x, y, ang = bezier(p0, p1, p2, p3, t)
-        # How far the stem leans off vertical here (moving tip-ward means
-        # dy < 0, so a vertical stem reports -90).
-        lean = ang + 90
-        tilt = lean + side * 56  # leaves reach up and well outward
-        parts.append(veined_leaf(x, y, tilt, length=132 * scale, width=60 * scale))
-    # The bud crowning the tip — gold, the divine touch as part of the growth.
-    # Nearly vertical regardless of the stem's final lean: a bud reaches for
-    # the light, and it must not collide with the crown leaves.
-    tx, ty, tang = bezier(p0, p1, p2, p3, 1.0)
-    # Tip-ward travel reports ~-90 when vertical; damp only the deviation.
-    lean = (tang + 90) * 0.35
-    parts.append(
-        f'<g transform="translate({tx:.1f},{ty:.1f}) rotate({lean:.1f})">'
-        f'<path d="M0,12 Q30,-34 0,-92 Q-30,-34 0,12 Z" fill="{GOLD}"/>'
-        f"</g>"
-    )
-    return "".join(parts)
+# The mark, revision four: the sapling rebuilt in Cadence's capsule language.
+# White ground; the STEM is the one green element (Cadence's one green bar,
+# turned to grow); near-black capsule leaves; a green dot of light above.
+STEM_X = 512
+STEM_TOP = 360
+STEM_BOTTOM = 712
+STEM_W = 66  # Cadence-weight capsules, not hairlines
 
 
 def emblem():
-    """The mark: sapling and spark on the dark ground. No rings, no frame —
-    ornament is what made revision two feel antique. Scaled about the group's
-    own center (~505, 448) so the plant owns the field."""
-    return (
-        '<g transform="translate(512,512) scale(1.16) translate(-505,-448)">'
-        + spark() + branch() + "</g>"
-    )
+    parts = []
+    # Cadence's defining trait: the capsules never touch. Leaves float beside
+    # the stem with a crisp gap, starting a fixed distance out along their own
+    # axis. (attach_y, side, length) — alternating, tapering toward the crown.
+    leaves = [
+        (648, -1, 158), (566, +1, 144),
+        (484, -1, 128), (402, +1, 112),
+    ]
+    detach = STEM_W / 2 + 26  # stem edge + air
+    for y, side, length in leaves:
+        angle = -46 if side > 0 else -134
+        rad = math.radians(angle)
+        sx = STEM_X + math.cos(rad) * detach
+        sy = y + math.sin(rad) * detach
+        parts.append(capsule(sx, sy, angle, length, STEM_W, DARK))
+    # The stem: one green capsule, vertical — geometry, not botany.
+    parts.append(capsule(STEM_X, STEM_BOTTOM, -90, STEM_BOTTOM - STEM_TOP,
+                         STEM_W, INK))
+    # The light it grows toward — with the stem, a quiet lowercase i.
+    parts.append(f'<circle cx="{STEM_X}" cy="{STEM_TOP - 96}" r="37" fill="{INK}"/>')
+    return "".join(parts)
 
 
 TEMPLATE = """<!doctype html>
