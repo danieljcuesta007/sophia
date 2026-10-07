@@ -863,6 +863,7 @@
             <div class="pref-row">
               <span class="pref-label">Theme</span>
               <div class="seg" role="group" aria-label="Theme">
+                <button id="sophia-theme-system" data-theme="system">System</button>
                 <button id="sophia-theme-dawn" data-theme="dawn">Dawn</button>
                 <button id="sophia-theme-dusk" data-theme="dusk">Dusk</button>
               </div>
@@ -2017,7 +2018,18 @@
     else    bubbleBtn.classList.remove('working');
   }
 
-  function isDusk(theme) { return theme === 'dusk' || theme === 'dark'; }
+  // Theme is 'system' (the default when unset), 'dawn' or 'dusk'. System follows the
+  // OS light/dark setting live, through the browser's prefers-color-scheme query.
+  const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  function themeMode(theme) {
+    if (theme === 'dusk' || theme === 'dark') return 'dusk';
+    if (theme === 'dawn') return 'dawn';
+    return 'system';
+  }
+  function isDusk(theme) {
+    const mode = themeMode(theme);
+    return mode === 'dusk' || (mode === 'system' && darkQuery.matches);
+  }
 
   function applySettings(s) {
     bubbleHost.style.display = s.showBubble === false ? 'none' : 'block';
@@ -2031,6 +2043,13 @@
   });
 
   // React to settings changes in real time (e.g. options page open in another tab).
+  // The OS flipped light/dark: only matters while the theme follows the system.
+  darkQuery.addEventListener('change', () => {
+    chrome.storage.local.get('sophia-settings', (data) => {
+      applySettings(data['sophia-settings'] || {});
+    });
+  });
+
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local' || !changes['sophia-settings']) return;
     const next = changes['sophia-settings'].newValue || {};
@@ -2397,9 +2416,10 @@
     greetEl.innerHTML = greetingFor(s.name);
     if (document.activeElement !== nameInput) nameInput.value = s.name || '';
 
-    const dusk = isDusk(s.theme);
-    shadow.getElementById('sophia-theme-dawn').classList.toggle('on', !dusk);
-    shadow.getElementById('sophia-theme-dusk').classList.toggle('on',  dusk);
+    const mode = themeMode(s.theme);
+    for (const m of ['system', 'dawn', 'dusk']) {
+      shadow.getElementById(`sophia-theme-${m}`).classList.toggle('on', m === mode);
+    }
 
     // Every check defaults ON — absent key means "not yet configured".
     for (const [id, key] of Object.entries(TOGGLES)) {
@@ -2423,7 +2443,7 @@
     });
   }
 
-  for (const id of ['sophia-theme-dawn', 'sophia-theme-dusk']) {
+  for (const id of ['sophia-theme-system', 'sophia-theme-dawn', 'sophia-theme-dusk']) {
     shadow.getElementById(id).addEventListener('click', async (e) => {
       const next = await patchSettings({ theme: e.currentTarget.dataset.theme });
       paintDrawerSettings(next);
