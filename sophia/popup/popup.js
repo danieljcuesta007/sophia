@@ -14,7 +14,10 @@ const QUIPS = [
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
-function isDusk(t) { return t === 'dusk' || t === 'dark'; }
+// Theme is 'system' (the default when unset), 'dawn' or 'dusk'; system follows the OS.
+const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+function themeMode(t) { return t === 'dusk' || t === 'dark' ? 'dusk' : t === 'dawn' ? 'dawn' : 'system'; }
+function isDusk(t) { const m = themeMode(t); return m === 'dusk' || (m === 'system' && darkQuery.matches); }
 
 function fmtNum(n) {
   if (n == null || n === '') return '—';
@@ -69,7 +72,7 @@ function applyTheme(theme) {
   }
   // Highlight the active segment button
   document.querySelectorAll('.tseg').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.theme === (isDusk(theme) ? 'dusk' : 'dawn'));
+    btn.classList.toggle('active', btn.dataset.theme === themeMode(theme));
   });
 }
 
@@ -225,9 +228,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const stored = await chrome.storage.local.get([STORAGE_KEY, 'sophia-last-analysis']);
   const s      = stored[STORAGE_KEY] || {};
-  let   theme  = s.theme || 'dawn';
+  let   theme  = s.theme || 'system';
 
   applyTheme(theme);
+  darkQuery.addEventListener('change', () => applyTheme(theme));
 
   // Greeting
   const firstName = (s.name || '').split(' ')[0];
@@ -332,12 +336,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.close();
   });
 
-  // ── Theme segmented control (Dawn / Dusk) ────────────────────────────────────
+  // ── Theme segmented control (System / Dawn / Dusk) ───────────────────────────
   document.querySelectorAll('.tseg').forEach(btn => {
     btn.addEventListener('click', async () => {
       theme = btn.dataset.theme;
+      // Read-modify-write: the drawer and options page edit this same object, so saving
+      // the copy read when the popup opened would undo anything they changed since.
+      const fresh = (await chrome.storage.local.get(STORAGE_KEY))[STORAGE_KEY] || {};
+      fresh.theme = theme;
       s.theme = theme;
-      await chrome.storage.local.set({ [STORAGE_KEY]: s });
+      await chrome.storage.local.set({ [STORAGE_KEY]: fresh });
       applyTheme(theme);
     });
   });

@@ -2,10 +2,17 @@
 
 const STORAGE_KEY = 'sophia-settings';
 
+// Theme is 'system' (the default when unset), 'dawn' or 'dusk'; system follows the OS.
+const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+let currentTheme = 'system';
+
 function applyThemeToPage(theme) {
-  if (theme === 'dusk') document.body.setAttribute('data-theme', 'dark');
+  currentTheme = theme || 'system';
+  const dusk = currentTheme === 'dusk' || (currentTheme === 'system' && darkQuery.matches);
+  if (dusk) document.body.setAttribute('data-theme', 'dark');
   else document.body.removeAttribute('data-theme');
 }
+darkQuery.addEventListener('change', () => applyThemeToPage(currentTheme));
 
 async function loadSettings() {
   const stored = await chrome.storage.local.get(STORAGE_KEY);
@@ -16,12 +23,12 @@ async function loadSettings() {
     document.getElementById('intro-line').textContent = `Good to see you again, ${s.name}.`;
   }
 
-  const theme = s.theme || 'dawn';
+  const theme = s.theme || 'system';
   const radio = document.querySelector(`input[name="theme"][value="${theme}"]`);
   if (radio) radio.checked = true;
   else {
-    const dawn = document.querySelector('input[name="theme"][value="dawn"]');
-    if (dawn) dawn.checked = true;
+    const sys = document.querySelector('input[name="theme"][value="system"]');
+    if (sys) sys.checked = true;
   }
   applyThemeToPage(theme);
 
@@ -33,7 +40,7 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
-  const theme = (document.querySelector('input[name="theme"]:checked') || {}).value || 'dawn';
+  const theme = (document.querySelector('input[name="theme"]:checked') || {}).value || 'system';
 
   // Read-modify-write. The in-page drawer edits the same object, so writing
   // a fresh literal here would silently drop any key this page doesn't own.
