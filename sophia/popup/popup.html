@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=420">
+  <title>Sophia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="pop-head">
+  <div class="pop-brand">
+    <div class="pop-mark">Soph<b>ia</b></div>
+    <div class="pop-sub">Intelligent Assistant</div>
+  </div>
+  <div class="pop-wave" aria-hidden="true">
+    <span class="w-bar"></span><span class="w-bar"></span>
+    <span class="w-bar"></span><span class="w-bar"></span>
+    <span class="w-bar"></span><span class="w-bar"></span>
+    <span class="w-bar"></span>
+  </div>
+  <div class="head-actions">
+    <div class="theme-seg" role="group" aria-label="Color theme">
+      <button class="tseg active" id="btn-dawn" data-theme="dawn">☀ Dawn</button>
+      <button class="tseg"        id="btn-dusk" data-theme="dusk">☽ Dusk</button>
+    </div>
+    <button class="icon-btn" id="btn-settings" title="Settings" aria-label="Settings">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<!-- ── Greeting ── -->
+<p class="greeting" id="greeting">Ready when you are.</p>
+
+<!-- ── Tab bar ── -->
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-tab="home"     role="tab" aria-selected="true">Home</button>
+  <button class="tab"        data-tab="insights" role="tab" aria-selected="false">Insights</button>
+  <button class="tab"        data-tab="ai"       role="tab" aria-selected="false">AI &amp; Tone</button>
+</nav>
+
+<!-- ── Tab: Home ── -->
+<div class="tab-panel active" id="tab-home">
+
+  <!-- Status row -->
+  <div class="status-row">
+    <span class="status-dot" id="status-dot"></span>
+    <span class="status-text" id="status-text">Connecting…</span>
+    <button class="link-btn" id="btn-show-panel">Open panel ↗</button>
+  </div>
+
+  <!-- Direct text area -->
+  <div class="direct-section">
+    <div class="direct-label">Paste or type text to analyze</div>
+    <textarea class="direct-ta" id="direct-ta"
+      placeholder="Paste anything here — an email, essay, message…&#10;Sophia reads it locally. No data leaves your machine."
+      rows="6"></textarea>
+    <div class="direct-foot">
+      <span class="direct-count" id="direct-count">0 words</span>
+      <button class="btn-analyze" id="btn-direct-analyze">Analyze →</button>
+    </div>
+  </div>
+
+  <!-- Quick toggles -->
+  <div class="quick-section">
+    <div class="quick-label">Quick settings</div>
+    <div class="quick-row">
+      <span class="quick-text">Show Sophia on every page</span>
+      <label class="mini-toggle">
+        <input type="checkbox" id="qt-bubble">
+        <span class="mt-track"><span class="mt-thumb"></span></span>
+      </label>
+    </div>
+    <div class="quick-row">
+      <span class="quick-text">Live spell-check underlines</span>
+      <label class="mini-toggle">
+        <input type="checkbox" id="qt-spelling" checked>
+        <span class="mt-track"><span class="mt-thumb"></span></span>
+      </label>
+    </div>
+    <div class="quick-row">
+      <span class="quick-text">Density highlights</span>
+      <label class="mini-toggle">
+        <input type="checkbox" id="qt-density" checked>
+        <span class="mt-track"><span class="mt-thumb"></span></span>
+      </label>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Tab: Insights ── -->
+<div class="tab-panel" id="tab-insights">
+
+  <div class="insight-empty" id="insights-empty">
+    <span class="ie-icon">◇</span>
+    <p>Paste text on the Home tab or<br>select text on the page and run Refine.</p>
+  </div>
+
+  <div id="insights-data" style="display:none">
+
+    <!-- 5-cell metrics grid -->
+    <div class="metrics-grid" id="ins-grid"><!-- JS --></div>
+
+    <!-- Score bars -->
+    <div class="score-section" id="ins-scores"><!-- JS --></div>
+
+    <!-- Stat rows -->
+    <div class="stat-rows" id="ins-rows"><!-- JS --></div>
+
+    <!-- Top words leaderboard -->
+    <div class="leaderboard" id="ins-words"><!-- JS --></div>
+
+  </div>
+</div>
+
+<!-- ── Tab: AI & Tone ── -->
+<div class="tab-panel" id="tab-ai">
+
+  <div class="insight-empty" id="ai-empty">
+    <span class="ie-icon">◇</span>
+    <p>Analyze text to see humanness<br>and tone breakdown.</p>
+  </div>
+
+  <div id="ai-data" style="display:none">
+    <div id="ai-score-wrap"><!-- JS --></div>
+    <div id="ai-rows"><!-- JS --></div>
+  </div>
+
+</div>
+
+<!-- ── Footer ── -->
+<footer class="pop-foot">
+  <span class="foot-name" id="foot-label">Sophia</span>
+  <div class="foot-actions">
+    <button class="foot-btn" id="btn-highlight" aria-pressed="false">◎ Highlights</button>
+    <a class="foot-link" id="foot-settings-link" href="#">All Settings ↗</a>
+  </div>
+</footer>
+
+<script src="popup.js"></script>
+</body>
+</html>

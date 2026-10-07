@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sophia — Settings</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #14140f;
+      --ink-soft:  #3a3a32;
+      --stone-600: #6b6b61;
+      --stone-400: #9b998e;
+      --stone-300: #c4c2b7;
+      --stone-200: #dddbd0;
+      --marble:    #f6f6f5;
+      --marble-w:  #ffffff;
+      --sage:      #76845e;
+      --sage-deep: #5f6c4a;
+      --ease:      cubic-bezier(.22,.61,.36,1);
+    }
+    /* Dusk = dark mode. All values pass WCAG AA contrast on dusk surfaces. */
+    [data-theme="dark"] {
+      --ink:       #eceae3;
+      --ink-soft:  #cbc9c0;
+      --stone-600: #b4b2aa;
+      --stone-400: #a2a098;
+      --stone-300: #44474e;
+      --stone-200: #2e3038;
+      --marble:    #17181b;
+      --marble-w:  #1f2024;
+      --sage:      #9db07f;
+      --sage-deep: #80936b;
+    }
+
+    body {
+      font-family: "Hanken Grotesk", system-ui, sans-serif;
+      background: var(--marble);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 40px 80px;
+    }
+    /* 2-column layout for section pairs */
+    .sections-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .sections-full { margin-top: 24px; }
+
+    /* ── Header ── */
+    .page-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--stone-200);
+    }
+    .brand { display: flex; flex-direction: column; gap: 4px; }
+    .mark {
+      font-family: "Cormorant Garamond", "Times New Roman", Georgia, serif;
+      font-weight: 400;
+      font-size: 32px;
+      color: var(--ink);
+      letter-spacing: .01em;
+      line-height: 1;
+    }
+    .mark b { font-weight: 500; }
+    .mark-sub {
+      font-size: 9px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--stone-400);
+      font-weight: 500;
+    }
+    .head-wave {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 28px;
+      padding-top: 8px;
+    }
+    .hw-bar { width: 2.5px; border-radius: 2px; background: var(--sage); }
+    @keyframes greek-wave-opts {
+      0%, 100% { height: 3px;  opacity: .25; }
+      50%       { height: 22px; opacity: .88; }
+    }
+    .hw-bar { animation: greek-wave-opts 3.8s ease-in-out infinite; }
+    .hw-bar:nth-child(1) { animation-delay: 0s; }
+    .hw-bar:nth-child(2) { animation-delay: .34s; }
+    .hw-bar:nth-child(3) { animation-delay: .68s; }
+    .hw-bar:nth-child(4) { animation-delay: 1.02s; }
+    .hw-bar:nth-child(5) { animation-delay: 1.36s; }
+    .hw-bar:nth-child(6) { animation-delay: 1.7s; }
+    .hw-bar:nth-child(7) { animation-delay: 2.04s; }
+
+    .intro {
+      font-family: "Cormorant Garamond", serif;
+      font-size: 19px;
+      font-style: italic;
+      font-weight: 300;
+      color: var(--stone-600);
+      margin-bottom: 32px;
+    }
+
+    /* ── Section ── */
+    .section { margin-bottom: 32px; }
+    .section-label {
+      font-size: 9.5px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--stone-400);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .section-card {
+      background: var(--marble-w);
+      border: 1px solid var(--stone-200);
+      border-radius: 6px;
+      overflow: hidden;
+      /* Soft natural shadow — like sunlight on a stone card */
+      box-shadow:
+        0 1px 0 rgba(255,255,255,.8) inset,
+        0 2px 6px rgba(20,15,5,.04),
+        0 8px 20px rgba(20,15,5,.07);
+    }
+    [data-theme="dark"] .section-card {
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.04),
+        0 2px 6px rgba(4,6,18,.22),
+        0 8px 20px rgba(4,6,18,.32);
+    }
+
+    /* ── Row ── */
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      gap: 20px;
+    }
+    .row + .row { border-top: 1px solid var(--stone-200); }
+    .row-text { flex: 1; }
+    .row-title { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 2px; }
+    .row-desc  { font-size: 11.5px; color: var(--stone-400); line-height: 1.45; }
+
+    /* ── Name input ── */
+    .name-input {
+      appearance: none;
+      border: 1px solid var(--stone-200);
+      background: var(--marble);
+      color: var(--ink);
+      font-family: "Hanken Grotesk", system-ui, sans-serif;
+      font-size: 13.5px;
+      padding: 9px 12px;
+      border-radius: 4px;
+      width: 170px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .name-input:focus { border-color: var(--sage); }
+    .name-input::placeholder { color: var(--stone-300); }
+
+    /* ── Segmented control (theme) ── */
+    .seg {
+      display: flex;
+      border: 1px solid var(--stone-200);
+      border-radius: 4px;
+      overflow: hidden;
+      flex: none;
+    }
+    .seg-opt { display: flex; }
+    .seg input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .seg label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--stone-600);
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .seg .seg-opt + .seg-opt label { border-left: 1px solid var(--stone-200); }
+    .seg input[type="radio"]:checked + label { background: var(--sage); color: #fff; }
+
+    /* ── Toggle switch ── */
+    .toggle-wrap { position: relative; width: 42px; height: 24px; flex: none; display: block; }
+    .toggle-wrap input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--stone-300);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .toggle-thumb {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 18px; height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(20,20,15,.2);
+      transition: transform .2s var(--ease);
+      pointer-events: none;
+    }
+    .toggle-wrap input:checked ~ .toggle-track { background: var(--sage); }
+    .toggle-wrap input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+    /* ── Disabled row ── */
+    .row.disabled { opacity: .5; pointer-events: none; }
+    .coming-tag {
+      font-size: 9.5px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      font-weight: 600;
+      color: var(--stone-400);
+      background: var(--stone-200);
+      padding: 3px 8px;
+      border-radius: 3px;
+      white-space: nowrap;
+      flex: none;
+    }
+
+    /* ── Auto-save row ── */
+    .save-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 28px;
+    }
+    .save-btn {
+      appearance: none;
+      border: 1px solid var(--stone-200);
+      cursor: pointer;
+      background: var(--marble-w);
+      color: var(--stone-600);
+      font-family: "Hanken Grotesk", system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: .03em;
+      padding: 8px 18px;
+      border-radius: 4px;
+      transition: background .15s, color .15s, transform .1s;
+    }
+    .save-btn:hover  { background: var(--marble); color: var(--ink); }
+    .save-btn:active { transform: translateY(1px); }
+    .autosave-hint {
+      font-size: 11.5px;
+      color: var(--stone-400);
+      font-style: italic;
+    }
+    .saved-msg {
+      font-size: 12px;
+      color: var(--sage);
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity .3s;
+      letter-spacing: .04em;
+    }
+    .saved-msg.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="page-head">
+    <div class="brand">
+      <div class="mark">Soph<b>ia</b></div>
+      <div class="mark-sub">Intelligent Assistant</div>
+    </div>
+    <div class="head-wave" aria-hidden="true">
+      <span class="hw-bar"></span>
+      <span class="hw-bar"></span>
+      <span class="hw-bar"></span>
+      <span class="hw-bar"></span>
+      <span class="hw-bar"></span>
+      <span class="hw-bar"></span>
+      <span class="hw-bar"></span>
+    </div>
+  </header>
+
+  <p class="intro" id="intro-line">Let's get acquainted.</p>
+
+  <div class="sections-grid">
+
+    <!-- About you -->
+    <div class="section">
+      <div class="section-label">About you</div>
+      <div class="section-card">
+        <div class="row">
+          <div class="row-text">
+            <div class="row-title">What shall I call you?</div>
+            <div class="row-desc">Used in greetings across the popup and panel.</div>
+          </div>
+          <input class="name-input" id="name-input" type="text"
+                 placeholder="Your name" maxlength="40" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <!-- Appearance -->
+    <div class="section">
+      <div class="section-label">Appearance</div>
+      <div class="section-card">
+        <div class="row">
+          <div class="row-text">
+            <div class="row-title">How do you prefer your light?</div>
+            <div class="row-desc">Applies immediately — no save needed.</div>
+          </div>
+          <div class="seg">
+            <div class="seg-opt">
+              <input type="radio" name="theme" id="th-dawn"   value="dawn">
+              <label for="th-dawn">Dawn</label>
+            </div>
+            <div class="seg-opt">
+              <input type="radio" name="theme" id="th-dusk"   value="dusk">
+              <label for="th-dusk">Dusk</label>
+            </div>
+            <div class="seg-opt">
+              <input type="radio" name="theme" id="th-system" value="system">
+              <label for="th-system">System</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sophia on your screen -->
+    <div class="section">
+      <div class="section-label">Sophia on your screen</div>
+      <div class="section-card">
+        <div class="row">
+          <div class="row-text">
+            <div class="row-title">May I stay on your screen?</div>
+            <div class="row-desc">Shows a small orb on every page. Drag it anywhere — tap to open the panel.</div>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="toggle-bubble">
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Checks -->
+    <div class="section">
+      <div class="section-label">What should I check</div>
+      <div class="section-card">
+        <div class="row">
+          <div class="row-text">
+            <div class="row-title">Spelling</div>
+            <div class="row-desc">Underlines common misspellings as you type.</div>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="toggle-spelling" checked>
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-text">
+            <div class="row-title">Grammar</div>
+            <div class="row-desc">Sentence-start capitals, double spaces, basic rules.</div>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="toggle-grammar" checked>
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-text">
+            <div class="row-title">Word density</div>
+            <div class="row-desc">Flags overused words with a color-coded leaderboard.</div>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="toggle-density" checked>
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+        <div class="row">
+          <div class="row-text">
+            <div class="row-title">Readability</div>
+            <div class="row-desc">Flesch grade — how easy your text is to read.</div>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="toggle-readability" checked>
+            <span class="toggle-track"></span>
+            <span class="toggle-thumb"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sections-grid -->
+
+  <!-- AI (locked) — full width -->
+  <div class="sections-full">
+    <div class="section">
+      <div class="section-label">AI engine</div>
+      <div class="section-card">
+        <div class="row disabled">
+          <div class="row-text">
+            <div class="row-title">Use smarter AI suggestions</div>
+            <div class="row-desc">Deep corrections and rewrite suggestions powered by a language model.
+              All current features work offline with no account or API key required.</div>
+          </div>
+          <span class="coming-tag">Coming later</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="save-row">
+    <span class="autosave-hint">All changes save automatically.</span>
+    <span class="saved-msg" id="saved-msg">✓ Saved</span>
+    <button class="save-btn" id="save-btn" style="display:none">Save</button>
+  </div>
+
+</div>
+
+<script src="options.js"></script>
+</body>
+</html>
