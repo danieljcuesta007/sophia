@@ -143,49 +143,40 @@ final class StatusWindow: NSObject, NSWindowDelegate {
     }
 
     static func markImage(height: CGFloat) -> NSImage {
-        BrandMark.image(height: height, upper: .labelColor,
-                        lower: OverlayController.styleColor, template: false)
+        BrandMark.image(height: height, color: OverlayController.styleColor,
+                        template: false)
     }
 }
 
 /// The Sophia mark drawn in code — the same geometry as `assets/mkicon.py`:
-/// two bowls of an S, each a thick round-capped arc, trimmed back from the
-/// waist so they never touch. No bundled asset to go missing, and it renders
-/// crisply at every size from the menu bar up.
+/// the letter S as ONE continuous round-capped stroke, two tangent bowls in a
+/// single path. No bundled asset to go missing, and it renders crisply at every
+/// size from the menu bar up. Keep in step with mkicon.py: if one changes and
+/// the other does not, the menu bar stops matching the app icon.
 enum BrandMark {
-    /// Design constants mirror mkicon.py (canvas 1024): radius 150, weight 76,
-    /// 15 degrees trimmed at the waist, 26 degrees of open terminal.
-    private static let trim: CGFloat = 15
+    /// Degrees of open terminal at each end (mkicon.py TERMINAL).
     private static let terminal: CGFloat = 26
 
-    /// `template` yields a monochrome mask (menu bar); otherwise the two bowls
-    /// take `upper` and `lower`.
-    static func image(height: CGFloat, upper: NSColor, lower: NSColor,
-                      template: Bool) -> NSImage
-    {
-        // The S is 4r tall and 2r wide, plus the stroke on each axis.
-        let weight = height * (76.0 / 676.0)   // 4*150 + 76 = 676 design-tall
+    static func image(height: CGFloat, color: NSColor, template: Bool) -> NSImage {
+        // Design canvas: bowls of ry 150 stacked, stroke 78 → 4*150 + 78 tall.
+        let weight = height * (78.0 / 678.0)
         let r = (height - weight) / 4
         let width = 2 * r + weight
         let image = NSImage(size: NSSize(width: width, height: height), flipped: false) { rect in
             let midX = rect.width / 2
             let midY = rect.height / 2
-
-            // AppKit is y-up, the design is y-down: mirror the angles.
-            let top = NSBezierPath()
-            top.appendArc(withCenter: NSPoint(x: midX, y: midY + r), radius: r,
-                          startAngle: terminal, endAngle: 270 - trim,
-                          clockwise: false)
-            let bottom = NSBezierPath()
-            bottom.appendArc(withCenter: NSPoint(x: midX, y: midY - r), radius: r,
-                             startAngle: 90 - trim, endAngle: 180 + terminal,
-                             clockwise: true)
-            for (path, color) in [(top, upper), (bottom, lower)] {
-                path.lineWidth = weight
-                path.lineCapStyle = .round
-                (template ? NSColor.black : color).setStroke()
-                path.stroke()
-            }
+            // AppKit is y-up, the design is y-down: mirror the angles. Both
+            // arcs go into one path, so the waist is a join, not two caps.
+            let s = NSBezierPath()
+            s.appendArc(withCenter: NSPoint(x: midX, y: midY + r), radius: r,
+                        startAngle: terminal, endAngle: 270, clockwise: false)
+            s.appendArc(withCenter: NSPoint(x: midX, y: midY - r), radius: r,
+                        startAngle: 90, endAngle: 180 + terminal, clockwise: true)
+            s.lineWidth = weight
+            s.lineCapStyle = .round
+            s.lineJoinStyle = .round
+            (template ? NSColor.black : color).setStroke()
+            s.stroke()
             return true
         }
         image.isTemplate = template
