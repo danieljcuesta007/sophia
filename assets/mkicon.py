@@ -69,31 +69,29 @@ def arc_path(cx, cy, rx, ry, a0, a1):
             f"A{rx},{ry} 0 {large} {sweep} {p1[0]:.1f},{p1[1]:.1f}")
 
 
-# The mark, revision six: the letter S in Cadence's language. Two bowls stacked
-# and tangent at the waist give the classical geometric S; each is one thick
-# round-capped stroke, and both are trimmed back from the waist so they never
-# touch — the crisp gap is the family trait. Upper bowl near-black, lower bowl
-# green: one green element, three colours, no gradients.
-RX = 176         # bowl half-width — wider than tall, so the S is not a stack
+# The mark: the letter S as ONE continuous stroke. Two bowls stacked and
+# tangent give the classical geometric S; here they are a single path with
+# round caps, in the one brand colour. Nothing else — no gap, no second
+# colour, no ornament.
+RX = 176         # bowl half-width — wider than tall, so the S reads as a letter
 RY = 150         # bowl half-height
-W = 76           # stroke weight, Cadence-heavy
-TRIM = 15.0      # degrees pulled back from the waist on each bowl
+W = 78           # stroke weight, Cadence-heavy
 TERMINAL = 26.0  # degrees of open terminal at each end of the S
 CX, CY = 512, 512
 
 
 def emblem():
     # Upper bowl: from the top-right terminal, counter-clockwise over the top
-    # and down the left, stopping short of the waist.
-    upper = arc_path(CX, CY - RY, RX, RY, -TERMINAL, -270 + TRIM)
-    # Lower bowl: 180-degree rotation of the upper — from just past the waist,
-    # clockwise down the right and along the bottom to the lower-left terminal.
-    lower = arc_path(CX, CY + RY, RX, RY, -90 + TRIM, 180 - TERMINAL)
+    # and down the left, into the waist. Lower bowl continues from the waist,
+    # clockwise down the right and along the bottom. One path, one stroke.
+    upper = arc_path(CX, CY - RY, RX, RY, -TERMINAL, -270)
+    lower = arc_path(CX, CY + RY, RX, RY, -90, 180 - TERMINAL)
+    # Drop the second path's "M" — the waist point is shared, so the arcs join
+    # into a single continuous stroke with exactly two round caps.
+    joined = upper + " " + lower.split(" ", 1)[1]
     return (
-        f'<path d="{upper}" fill="none" stroke="{DARK}" stroke-width="{W}" '
-        f'stroke-linecap="round"/>'
-        f'<path d="{lower}" fill="none" stroke="{INK}" stroke-width="{W}" '
-        f'stroke-linecap="round"/>'
+        f'<path d="{joined}" fill="none" stroke="{INK}" stroke-width="{W}" '
+        f'stroke-linecap="round" stroke-linejoin="round"/>'
     )
 
 

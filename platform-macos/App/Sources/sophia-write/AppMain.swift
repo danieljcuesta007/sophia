@@ -143,7 +143,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hotkeys.stop()
             overlay.hide()
             card.close()
+            rewritePanel.close()
+            // Tear the observers down too: without Accessibility there is
+            // nothing for them to observe, and startWatching() re-creates them
+            // if permission comes back (AC-12).
+            for monitor in [clickMonitor, scrollMonitor, localClickMonitor,
+                            localScrollMonitor].compactMap({ $0 }) {
+                NSEvent.removeMonitor(monitor)
+            }
+            clickMonitor = nil
+            scrollMonitor = nil
+            localClickMonitor = nil
+            localScrollMonitor = nil
+            validityTimer?.invalidate()
+            validityTimer = nil
             activeSurface = nil
+            lastIssues = []
             lastFocusDescription = "Accessibility permission needed"
         }
         refreshStatusIcon()
@@ -459,7 +474,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The brand S at menu-bar scale, as a template image so macOS tints it
     /// for light and dark menu bars.
     private static let menuBarGlyph: NSImage = BrandMark.image(
-        height: 17, upper: .black, lower: .black, template: true)
+        height: 17, color: .black, template: true)
 
 
     // MARK: lint pipeline
