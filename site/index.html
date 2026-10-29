@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sophia: a writing companion that keeps your words on your machine</title>
+<meta name="description" content="Sophia checks spelling, grammar and word choice right where you write, and nothing you write leaves your machine. Free and open source, from DC Labs. Chrome today, Mac in development.">
+<meta name="theme-color" content="#f6f6f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14140f" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Sophia: a writing companion that keeps your words on your machine">
+<meta property="og:description" content="Spelling, grammar and word choice, checked where you write. No account, no API key, no network calls. Free and open source, from DC Labs.">
+<meta property="og:url" content="https://sophia-writing.pages.dev/">
+<meta property="og:image" content="https://sophia-writing.pages.dev/icon-512.png">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+<script src="site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <a class="brand" href="index.html" aria-label="Sophia home"><img src="art/mark.svg" alt="" width="34" height="34"><span>Sophia</span></a>
+  <nav aria-label="Main navigation">
+    <a href="#features">Features</a>
+    <a href="#compare">Compare</a>
+    <a href="#creator">Creator</a>
+    <a class="nav-cta" href="#get">Get Sophia</a>
+  </nav>
+</header>
+
+<main id="main" tabindex="-1">
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <p class="eyebrow">A DC Labs product · Free &amp; open source · Early release</p>
+      <h1 id="hero-title">Write clearly.<br><span>Keep every word your own.</span></h1>
+      <p class="lede">Sophia reads what you write and points out spelling slips, grammar mistakes and better word choices, right where you're typing. Everything is checked on your machine. No account, no API key, and nothing you write is sent anywhere.</p>
+      <div class="hero-actions">
+        <a class="button" href="#get">Get Sophia for Chrome</a>
+        <a class="button ghost" href="#mac">Sophia for Mac</a>
+      </div>
+    </div>
+    <div class="demo" aria-hidden="true">
+      <div class="window">
+        <div class="window-bar"><span></span><span></span><span></span><p>Draft</p></div>
+        <p class="draft"><mark class="u-grammar">Their</mark> going to love the new menu, but the launch date <mark class="u-word is-open">effects</mark> everyone on the team. We should <mark class="u-grammar">of</mark> told them sooner, and <mark class="u-spell">definately</mark> before Friday.</p>
+      </div>
+      <div class="card">
+        <p class="card-kind">Word choice</p>
+        <p class="card-fix"><s>effects</s> <b>affects</b></p>
+        <p class="card-why">"Affects" is the verb: to have an influence on. "Effects" is the noun: the results.</p>
+        <p class="card-actions"><span class="card-accept">Accept</span><span class="card-dismiss">Dismiss</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="steps-band" aria-labelledby="steps-title">
+  <h2 id="steps-title" class="visually-hidden">How it works</h2>
+  <ol class="steps">
+    <li><img class="spot" src="art/select.svg" alt="" width="120" height="120"><h3>Write</h3><p>Type as you normally would, or select a passage you want a second opinion on.</p></li>
+    <li><img class="spot" src="art/read.svg" alt="" width="120" height="120"><h3>Read</h3><p>Sophia marks what needs a look, and each kind of mark has its own shape, not just its own colour.</p></li>
+    <li><img class="spot" src="art/accept.svg" alt="" width="120" height="120"><h3>Accept</h3><p>Open a mark to see the fix and why. Nothing changes in your text until you say so.</p></li>
+  </ol>
+</section>
+
+<section class="features" id="features" aria-labelledby="features-title">
+  <p class="kicker">Features</p>
+  <h2 id="features-title">A careful reader, with no one looking over your shoulder.</h2>
+  <ul class="feature-grid">
+    <li class="feature-lead"><img class="lead-art" src="art/mark.svg" alt="" width="200" height="200"><div><h3>Private by how it's built</h3><p>Sophia checks your writing with code that runs on your own computer. There's no account to make, no key to paste and no server on the other end, so your drafts, emails and notes stay yours.</p></div></li>
+    <li><h3>Spelling, grammar, word choice</h3><p>Three kinds of help, marked three ways: a solid line for spelling, a dotted line for grammar and a wave for a better word.</p></li>
+    <li><h3>A word-density read</h3><p>See when a sentence is getting heavy, so you know where to trim before your reader feels it.</p></li>
+    <li><h3>Calm by design</h3><p>A quiet marble-and-light panel that follows your system's light or dark mode, with a Dawn and a Dusk theme if you prefer.</p></li>
+    <li><h3>Your text, never rewritten for you</h3><p>Every suggestion waits for you. Sophia never changes a word on its own.</p></li>
+    <li><h3>Free, and you can read every line</h3><p>MIT licensed and on GitHub, so anyone can check exactly what it does.</p></li>
+  </ul>
+</section>
+
+<section class="surfaces" id="mac" aria-labelledby="surfaces-title">
+  <p class="kicker">Two ways to use it</p>
+  <h2 id="surfaces-title">In your browser now. Across your Mac next.</h2>
+  <div class="surface-grid">
+    <article class="surface">
+      <p class="status status-ready">Available now</p>
+      <h3>Sophia for Chrome</h3>
+      <p>Select text on any web page and Sophia's panel shows fixes, better words and a density read. Works in Chrome and other Chromium browsers.</p>
+      <a class="text-link" href="#get">How to install it</a>
+    </article>
+    <article class="surface">
+      <p class="status">In development</p>
+      <h3>Sophia for Mac</h3>
+      <p>The same careful reader in every app on your Mac. Mistakes are underlined as you pause, and <kbd>⌘</kbd><kbd>⇧</kbd><kbd>K</kbd> offers a rewrite: proofread, more concise, more professional, friendlier, or your own instruction. Grammar is checked by the open-source Harper engine in under a millisecond, and rewrites come from Apple's on-device model, so this text never leaves your Mac either.</p>
+      <p class="small">There's no download yet. Developers can build it from the source today; it needs macOS 14 or later, and rewrites need a Mac with Apple Intelligence.</p>
+      <a class="text-link" href="https://github.com/danieljcuesta007/sophia#build-and-run" rel="noopener">Build it from source</a>
+    </article>
+  </div>
+</section>
+
+<section class="compare" id="compare" aria-labelledby="compare-title">
+  <p class="kicker">Compare</p>
+  <h2 id="compare-title">How Sophia compares</h2>
+  <p class="section-lede">The facts that matter most, as of October 2026, from each product's own site. Prices and features change, so check the linked pages.</p>
+  <div class="table-wrap" tabindex="0" role="region" aria-labelledby="compare-title">
+    <table>
+      <thead><tr><th scope="col"><span class="visually-hidden">Feature</span></th><th scope="col" class="us">Sophia</th><th scope="col">Grammarly</th><th scope="col">LanguageTool</th><th scope="col">Apple Writing Tools</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Where your text is checked</th><td class="us">On your machine, always</td><td>On Grammarly's servers</td><td>On LanguageTool's servers, or on a server you run yourself</td><td>On your Mac, or on Apple's Private Cloud Compute</td></tr>
+        <tr><th scope="row">Account needed</th><td class="us">No</td><td>Yes</td><td>Not for basic checks</td><td>No, it's built in</td></tr>
+        <tr><th scope="row">Price</th><td class="us">Free</td><td>Free tier; Pro is paid</td><td>Free tier; Premium is paid</td><td>Free, built in</td></tr>
+        <tr><th scope="row">Open source</th><td class="us">Yes, MIT</td><td>No</td><td>The core engine, LGPL</td><td>No</td></tr>
+        <tr><th scope="row">Where it runs</th><td class="us">Chrome today; Mac in development</td><td>Browsers, Mac, Windows, iPhone, Android</td><td>Browsers, desktop apps, office add-ons</td><td>Apple devices with Apple Intelligence</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">Where they win: Grammarly and LanguageTool are mature, check many more languages and mistakes, and run on nearly every device. Apple Writing Tools needs nothing installed. Sophia is new, English-first and still growing its dictionary. Choose it if you want your writing to stay on your machine. Sources: <a href="https://www.grammarly.com/plans" rel="noopener">Grammarly plans</a> and <a href="https://www.grammarly.com/privacy-policy" rel="noopener">privacy policy</a>, <a href="https://languagetool.org/premium" rel="noopener">LanguageTool Premium</a> and <a href="https://github.com/languagetool-org/languagetool" rel="noopener">source</a>, <a href="https://support.apple.com/guide/mac-help/use-writing-tools-mchldcd6c260/mac" rel="noopener">Apple Writing Tools</a>.</p>
+</section>
+
+<section class="download" id="get" aria-labelledby="get-title">
+  <p class="kicker">Get Sophia</p>
+  <h2 id="get-title">Install Sophia for Chrome</h2>
+  <div class="download-grid">
+    <div class="download-card">
+      <img src="icon-512.png" alt="The Sophia app icon" width="120" height="120">
+      <a class="button" href="https://github.com/danieljcuesta007/sophia/archive/refs/heads/main.zip">Download Sophia (.zip)</a>
+      <p class="small">Chrome or another Chromium browser · nothing else to install</p>
+      <p class="small">Or with Git:</p>
+      <pre><code>git clone https://github.com/danieljcuesta007/sophia</code></pre>
+      <button type="button" class="copy" data-copy="git clone https://github.com/danieljcuesta007/sophia">Copy</button>
+    </div>
+    <div class="first-open">
+      <h3 id="why-unpacked">Why it isn't in the Chrome Web Store yet</h3>
+      <p>Sophia is an early release, so for now you add it to Chrome yourself instead of from the Web Store. It takes about a minute, and you can see every file you're adding before you do.</p>
+      <h3>Add it to Chrome</h3>
+      <ol>
+        <li>Unzip the download. Inside, find the folder <b>extension › sophia</b>.</li>
+        <li>Open <b>chrome://extensions</b> and turn on <b>Developer mode</b>, top right.</li>
+        <li>Click <b>Load unpacked</b> and choose that <b>sophia</b> folder.</li>
+        <li>Pin Sophia from the puzzle-piece menu, then select some text on any page.</li>
+      </ol>
+      <p>Chrome may remind you that a developer-mode extension is on. That's expected for anything added this way.</p>
+      <h3>What it can see</h3>
+      <p>Sophia reads only the text you select or the field you're writing in, to check it. Its settings are kept in your browser's own storage. You can read the whole source on <a href="https://github.com/danieljcuesta007/sophia" rel="noopener">GitHub</a>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="creator" id="creator" aria-labelledby="creator-title">
+  <div class="creator-card">
+    <div class="monogram" aria-hidden="true">DC</div>
+    <div>
+      <p class="kicker">About the creator</p>
+      <h2 id="creator-title">Daniel Cuesta.</h2>
+      <p>Author of <strong>Wednesdays Of Wisdom</strong>, a weekly newsletter focused on timeless principles for daily action. Co-founder of <strong>Addisuna Coffee Co.</strong>, an Ethiopian specialty coffee company sponsoring children's education in Ethiopia.</p>
+      <p>University of Notre Dame alumnus. Currently operating and building out of New York, New York. Growing the good in business with IBM Consulting.</p>
+      <p>Sophia is a DC Labs product, the label for the tools he makes.</p>
+      <ul class="creator-links">
+        <li><a href="https://danielcuesta007.com" rel="noopener">danielcuesta007.com</a></li>
+        <li><a href="https://addisuna.com" rel="noopener">Addisuna Coffee</a></li>
+        <li><a href="https://cadence-dictation.pages.dev" rel="noopener">Also from DC Labs: Cadence</a></li>
+        <li><a href="https://skeptic.pages.dev" rel="noopener">Also from DC Labs: Skeptic</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="faq" id="faq" aria-labelledby="faq-title">
+  <p class="kicker">Questions</p>
+  <h2 id="faq-title">Fair questions</h2>
+  <details><summary>Is it really free?</summary><p>Yes. Sophia is open source under the MIT license, with no account, trial or word limit.</p></details>
+  <details><summary>Does anything I write leave my machine?</summary><p>No. Your text is checked by code running on your computer, and Sophia sends nothing you write anywhere. The Chrome panel loads its typefaces from Google Fonts, which is a request for fonts, not for your text, and it falls back to your system's fonts without it.</p></details>
+  <details><summary>How good is it next to Grammarly?</summary><p>Honestly, it's earlier. Sophia catches common spelling slips, grammar mistakes and confusable words, but its spelling list is still small and it checks English first. It's built for people who would rather have a careful local reader than send their writing to a server.</p></details>
+  <details><summary>When can I get it on my Mac?</summary><p>The Mac version is built and in testing. Until there's a download, developers can <a href="https://github.com/danieljcuesta007/sophia#build-and-run" rel="noopener">build it from the source</a>.</p></details>
+  <details><summary>Why load it "unpacked" instead of from the Web Store?</summary><p>It's an early release. <a href="#why-unpacked">Here's why, and how to add it</a> in about a minute.</p></details>
+  <details><summary>Is it affiliated with Grammarly, LanguageTool or Apple?</summary><p>No. They're named only to compare and to credit. Sophia is an independent project.</p></details>
+</section>
+
+<p class="visually-hidden" role="status" data-copy-status></p>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-brand"><img src="art/mark.svg" alt="" width="40" height="40"><p><strong>Sophia</strong><br>A DC Labs product</p></div>
+  <nav aria-label="Footer">
+    <a href="legal.html#privacy">Privacy</a>
+    <a href="legal.html#license">License</a>
+    <a href="legal.html#credits">Credits</a>
+    <a href="https://github.com/danieljcuesta007/sophia" rel="noopener">Source</a>
+  </nav>
+  <p class="fineprint">© 2026 Daniel Cuesta. MIT licensed. Grammar checking on Mac by Harper (Apache-2.0). Grammarly, LanguageTool, Apple, macOS and Chrome belong to their owners. Sophia is not affiliated with or endorsed by them.</p>
+</footer>
+</body>
+</html>
