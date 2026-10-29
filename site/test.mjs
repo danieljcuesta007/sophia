@@ -179,3 +179,13 @@ test('every page says Sophia is a preview still in development', () => {
   for (const [name, page] of Object.entries(pages)) assert.match(page, /class="preview-note"[^>]*>[\s\S]*?still in development/, name);
   assert.match(README, /^> \*\*Preview\.\*\* Sophia is still in development/m);
 });
+
+// 29 Oct: one credit line for every DC Labs product, and never "with Claude".
+test('every page credits "Built by DC Labs, a Daniel J. Cuesta company"', async () => {
+  const home = await readFile('index.html', 'utf8'), legal = await readFile('legal.html', 'utf8');
+  assert.match(home, /<h2 id="creator-title">Built by DC Labs, a Daniel J\. Cuesta company\.<\/h2>/);
+  for (const page of [home, legal]) {
+    assert.match(page, /<strong>Sophia<\/strong><br>Built by DC Labs, a Daniel J\. Cuesta company\./);
+    assert.doesNotMatch(page, /with(&nbsp;|\s)Claude\b(?! Code)/);
+  }
+});
