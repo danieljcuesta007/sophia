@@ -19,6 +19,7 @@ platform-macos/      SwiftPM menu-bar agent (accessory / LSUIElement)
   App/               AX watcher, overlay underlines, suggestion card, hotkeys, stores
 spikes/              Phase 0 evidence (kept; results in each RESULTS.md)
 tools/               build.sh (core + shell + selftest), package-app.sh (.app bundle)
+extension/           Sophia for Chrome (Manifest V3); was its own repo, folded in with history
 ```
 
 ## Build and run
