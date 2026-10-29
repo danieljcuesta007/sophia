@@ -1,12 +1,18 @@
-# Sophia Write
+# Sophia
 
-An ambient, system-wide writing layer for macOS. 100% local: errors are detected by a
-deterministic Rust engine (Harper), rewrites come from Apple's on-device foundation
-model. No account, no API key, no network calls.
+A writing companion from DC Labs that keeps your words on your machine. Spelling, grammar and
+better word choices, checked where you write, with no account, no API key and no network calls.
 
-Spec: see the companion blueprint repo (`sophia-write-blueprint`). Current status:
-**Phase 1 ambient core + Phase 2 rewrite (⌘⇧K, on-device model) built; live
-dogfood running.**
+- **Sophia for Chrome** (`extension/`): select text on any page, or type in any text box. Available
+  now as an unpacked extension; see [extension/README.md](extension/README.md).
+- **Sophia for Mac** (the rest of this repo, the app is "Sophia Write"): an ambient, system-wide
+  writing layer for macOS. Errors are detected by a deterministic Rust engine (Harper), rewrites
+  come from Apple's on-device foundation model. In development: Phase 1 ambient core + Phase 2
+  rewrite (⌘⇧K) built; live dogfood running. No download yet; build it from source below.
+
+**Website:** https://sophia-writing.pages.dev (source in `site/`).
+
+Spec: see the companion blueprint repo (`sophia-write-blueprint`).
 
 ## Layout
 
@@ -20,6 +26,7 @@ platform-macos/      SwiftPM menu-bar agent (accessory / LSUIElement)
 spikes/              Phase 0 evidence (kept; results in each RESULTS.md)
 tools/               build.sh (core + shell + selftest), package-app.sh (.app bundle)
 extension/           Sophia for Chrome (Manifest V3); was its own repo, folded in with history
+site/                The product website (static, no dependencies; Cloudflare Pages)
 ```
 
 ## Build and run
@@ -67,6 +74,14 @@ guards reject rewrites that change length wildly, merge sentences in Proofread,
 or silently expand contractions (voice guard). Nothing applies until Accept.
 Suggestion cards also gain a "Why?" button — the model explains the rule in one
 sentence, on demand.
+
+## Website
+
+```sh
+(cd site && npm test)                       # builds site/dist, then links, CSP, honesty, art checks
+(cd site && npm run preview)                # http://127.0.0.1:4176
+npx wrangler pages deploy site/dist --project-name sophia-writing --branch main
+```
 
 ## Requirements
 
