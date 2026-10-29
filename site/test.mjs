@@ -174,3 +174,8 @@ test('the art is self-contained, described, used, and in Sophia colours only', a
   assert.ok(legal.includes('src="art/mark.svg"'));
   assert.doesNotMatch(html + css, /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u, 'no emoji anywhere');
 });
+
+test('every page says Sophia is a preview still in development', () => {
+  for (const [name, page] of Object.entries(pages)) assert.match(page, /class="preview-note"[^>]*>[\s\S]*?still in development/, name);
+  assert.match(README, /^> \*\*Preview\.\*\* Sophia is still in development/m);
+});

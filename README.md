@@ -1,5 +1,8 @@
 # Sophia
 
+> **Preview.** Sophia is still in development. What is here, and the site at
+> https://sophia-writing.pages.dev, is an early preview version: expect rough edges and changes.
+
 A writing companion from DC Labs that keeps your words on your machine. Spelling, grammar and
 better word choices, checked where you write, with no account, no API key and no network calls.
 
