@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sophia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14140f;
+    --ink-soft:#3a3a32;
+    --stone-700:#54534b;
+    --stone-600:#6b6b61;
+    --stone-500:#83817690;
+    --stone-400:#9b998e;
+    --stone-300:#c4c2b7;
+    --stone-200:#dddbd0;
+    --marble:#f6f6f5;
+    --marble-bright:#ffffff;
+
+    /* fresco pigments — semantic accents */
+    --sage:#76845e;        /* word choice */
+    --sage-deep:#5f6c4a;
+    --sage-wash:rgba(118,132,94,.10);
+    --terra:#a14b3c;       /* spelling */
+    --terra-deep:#8a3e30;
+    --terra-wash:rgba(161,75,60,.13);
+    --lapis:#3f5d78;       /* grammar */
+    --lapis-deep:#33495f;
+    --lapis-wash:rgba(63,93,120,.12);
+    --ochre:#b0823a;       /* density: getting heavy */
+    --ochre-deep:#8f6829;
+    --ochre-wash:rgba(176,130,58,.16);
+    --red-wash:rgba(161,75,60,.16);
+
+    --shadow-long:48px 60px 90px -40px rgba(20,20,15,.30);
+    --shadow-soft:0 2px 18px -8px rgba(20,20,15,.22);
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Hanken Grotesk",system-ui,sans-serif;
+    color:var(--ink);background:var(--marble);
+    -webkit-font-smoothing:antialiased;line-height:1.55;
+    position:relative;min-height:100vh;overflow-x:hidden;
+  }
+
+  .field{position:fixed;inset:0;z-index:-2;background:var(--marble)}
+  .field svg{position:absolute;inset:0;width:100%;height:100%;opacity:.32}
+  .light{
+    position:fixed;inset:-20% -10%;z-index:-1;pointer-events:none;
+    background:
+      linear-gradient(118deg,rgba(251,250,246,0) 18%,rgba(251,250,246,.85) 38%,rgba(251,250,246,.92) 47%,rgba(251,250,246,0) 64%),
+      radial-gradient(120% 90% at 18% 8%, rgba(255,255,255,.9), rgba(255,255,255,0) 55%),
+      radial-gradient(140% 120% at 92% 102%, rgba(20,20,15,.16), rgba(20,20,15,0) 55%);
+    animation:drift 26s var(--ease) infinite alternate;
+  }
+  @keyframes drift{from{transform:translate3d(-1.2%,-0.6%,0)}to{transform:translate3d(1.2%,0.8%,0)}}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+
+  .top{display:flex;align-items:center;justify-content:space-between;padding:30px 0 0}
+  .mark{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:25px;letter-spacing:.01em}
+  .mark b{font-weight:500}
+  .top nav{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--stone-600)}
+  .top nav span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--sage);box-shadow:0 0 0 3px var(--sage-wash)}
+
+  .hero{padding:84px 0 18px;max-width:760px}
+  .eyebrow{font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--sage-deep);margin:0 0 26px}
+  h1{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:clamp(58px,11vw,128px);line-height:.92;letter-spacing:-.015em;margin:0}
+  h1 em{font-style:italic;font-weight:400}
+  .lede{font-size:clamp(17px,2.1vw,21px);color:var(--stone-700);max-width:48ch;margin:30px 0 0}
+  .lede .quiet{color:var(--stone-400)}
+
+  .stage{padding:60px 0 90px}
+  .stage-label{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--stone-600);display:flex;align-items:center;gap:14px;margin:0 0 22px}
+  .stage-label::after{content:"";flex:1;height:1px;background:var(--stone-200)}
+
+  .panel{background:linear-gradient(168deg,#ffffff,#f1f1f0);border:1px solid var(--stone-200);border-radius:4px;box-shadow:var(--shadow-long);overflow:hidden;position:relative}
+  .panel::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent)}
+
+  .panel-head{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--stone-200);background:rgba(255,255,255,.6)}
+  .panel-head .mark{font-size:19px}
+  .panel-head .meta{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--stone-400)}
+
+  .editor-wrap{padding:24px 22px 8px}
+  .editor-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--stone-400);margin:0 0 10px}
+
+  /* shared type metrics for textarea + highlight backdrop */
+  .ed-type{
+    font-family:"Cormorant Garamond",serif;font-size:21px;line-height:1.55;letter-spacing:0;
+    padding:0;margin:0;border:0;
+  }
+  .editor-stack{position:relative}
+  .backdrop{
+    position:absolute;inset:0;pointer-events:none;color:transparent;
+    white-space:pre-wrap;overflow-wrap:break-word;overflow:hidden;z-index:0;
+  }
+  .backdrop mark{color:transparent;border-radius:2px;padding:.04em 0}
+  .backdrop mark.m-watch{background:var(--ochre-wash);box-shadow:inset 0 -2px 0 var(--ochre)}
+  .backdrop mark.m-dense{background:var(--red-wash);box-shadow:inset 0 -2px 0 var(--terra)}
+  textarea#src{
+    position:relative;z-index:1;width:100%;min-height:130px;resize:vertical;
+    background:transparent;color:var(--ink);outline:none;display:block;
+    caret-color:var(--sage-deep);
+  }
+  textarea#src::placeholder{color:var(--stone-300)}
+
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 22px 22px}
+
+  /* floating "correct the sentence" pop */
+  .pop{
+    position:absolute;z-index:6;right:22px;top:64px;width:min(420px,calc(100% - 44px));
+    background:#fff;border:1px solid var(--stone-200);border-radius:6px;
+    box-shadow:0 24px 50px -18px rgba(20,20,15,.34),0 4px 12px -6px rgba(20,20,15,.2);
+    padding:20px 22px 8px;opacity:0;transform:translateY(-8px) scale(.98);
+    transform-origin:top right;pointer-events:none;
+    transition:opacity .26s var(--ease),transform .26s var(--ease);
+  }
+  .pop.show{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+  .pop .pop-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--stone-500);margin:0 0 12px}
+  .pop .sentence{font-size:18px;line-height:1.5;color:var(--ink);margin:0 0 6px}
+  .pop del{color:var(--terra);text-decoration:line-through;text-decoration-thickness:2px}
+  .pop ins{color:var(--lapis);text-decoration:none;font-weight:600}
+  .pop ins.w{color:var(--sage-deep)}
+  .pop .pop-actions{display:flex;align-items:center;gap:4px;margin-top:14px;border-top:1px solid var(--stone-200);padding-top:6px}
+  .pop .pact{appearance:none;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:13.5px;color:var(--stone-700);display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:4px;transition:.16s var(--ease);flex:1;justify-content:flex-start}
+  .pop .pact:hover{background:var(--stone-200)}
+  .pop .pact.accept{color:var(--sage-deep);font-weight:600}
+  .pop .pact.accept:hover{background:var(--sage-wash)}
+  .pop .pact svg{width:16px;height:16px;flex:none}
+  .pop .pact:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .count{font-size:12.5px;color:var(--stone-600)}
+  .count b{color:var(--ink);font-weight:600}
+  .refine{appearance:none;border:none;cursor:pointer;font-family:"Hanken Grotesk",sans-serif;font-weight:600;font-size:13px;letter-spacing:.04em;color:var(--marble-bright);background:var(--sage);padding:11px 24px;border-radius:2px;transition:background .25s var(--ease),transform .2s var(--ease)}
+  .refine:hover{background:var(--sage-deep)}
+  .refine:active{transform:translateY(1px)}
+  .refine:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+  /* legend / key */
+  .legend{display:flex;flex-wrap:wrap;gap:18px;padding:14px 22px;border-top:1px solid var(--stone-200);background:rgba(255,255,255,.55)}
+  .key{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--stone-600)}
+  .key i{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .k-terra{background:var(--terra)} .k-lapis{background:var(--lapis)} .k-sage{background:var(--sage)} .k-ochre{background:var(--ochre)}
+
+  .results{border-top:1px solid var(--stone-200);max-height:0;opacity:0;overflow:hidden;transition:max-height .55s var(--ease),opacity .4s var(--ease)}
+  .results.show{max-height:2400px;opacity:1}
+
+  .block{padding:22px;border-bottom:1px solid var(--stone-200)}
+  .block:last-child{border-bottom:none}
+  .block h3{font-weight:600;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--stone-600);margin:0 0 16px;display:flex;align-items:center;gap:10px}
+  .block h3 .n{font-family:"Cormorant Garamond",serif;font-weight:500;font-size:15px;letter-spacing:0;text-transform:none;color:var(--stone-400);min-width:18px}
+
+  .empty{color:var(--stone-400);font-size:14px}
+  .empty.ok{color:var(--sage-deep)}
+
+  /* corrections — pigment-tagged */
+  .fix{display:flex;align-items:baseline;gap:14px;padding:10px 0 10px 14px;border-bottom:1px dotted var(--stone-200);position:relative}
+  .fix:last-child{border-bottom:none}
+  .fix::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:2px}
+  .fix.t-spell::before{background:var(--terra)}
+  .fix.t-grammar::before{background:var(--lapis)}
+  .fix.t-mech::before{background:var(--stone-300)}
+  .fix .swap{font-size:15px;flex:1}
+  .fix .was{color:var(--stone-400);text-decoration:line-through;text-decoration-color:var(--stone-300)}
+  .fix .arrow{color:var(--stone-300);margin:0 8px}
+  .fix .now{color:var(--ink);font-weight:500}
+  .fix .why{font-size:11px;letter-spacing:.06em;text-transform:uppercase;min-width:108px;text-align:right;font-weight:600}
+  .fix.t-spell .why{color:var(--terra-deep)}
+  .fix.t-grammar .why{color:var(--lapis-deep)}
+  .fix.t-mech .why{color:var(--stone-500)}
+  .apply{appearance:none;border:1px solid var(--stone-300);background:transparent;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:.06em;color:var(--stone-700);padding:5px 12px;border-radius:2px;transition:.2s var(--ease);white-space:nowrap}
+  .apply:hover{border-color:var(--sage);color:var(--sage-deep);background:var(--sage-wash)}
+  .apply:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  /* word choice / synonyms (sage) */
+  .rep{padding:6px 0 4px}
+  .rep-head{display:flex;align-items:baseline;gap:12px;margin:0 0 9px}
+  .rep-word{font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:500;font-style:italic}
+  .rep-count{font-size:12px;color:var(--stone-600)}
+  .rep-count b{color:var(--sage-deep);font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+  .chip{appearance:none;border:1px solid var(--stone-200);background:var(--marble-bright);cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink-soft);padding:6px 13px;border-radius:999px;transition:.18s var(--ease)}
+  .chip:hover{border-color:var(--sage);color:var(--sage-deep);background:var(--sage-wash);transform:translateY(-1px)}
+  .chip:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .chip.copied{border-color:var(--sage);background:var(--sage);color:var(--marble-bright)}
+
+  /* density ranking leaderboard */
+  .rank-key{display:flex;gap:16px;margin:-4px 0 16px;font-size:11px;letter-spacing:.04em;color:var(--stone-500)}
+  .rank-key span{display:inline-flex;align-items:center;gap:6px}
+  .rank-key i{width:8px;height:8px;border-radius:2px}
+  .row{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:14px;padding:8px 0}
+  .row .pos{font-family:"Cormorant Garamond",serif;font-size:17px;color:var(--stone-400);text-align:right}
+  .row .meter{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .row .word{font-size:15px;color:var(--ink);display:flex;align-items:center;gap:9px}
+  .row .tag{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:2px 7px;border-radius:2px}
+  .tag.normal{color:var(--stone-500);background:var(--stone-200)}
+  .tag.watch{color:#fff;background:var(--ochre)}
+  .tag.dense{color:#fff;background:var(--terra)}
+  .track{height:6px;background:var(--stone-200);border-radius:3px;overflow:hidden}
+  .fill{height:100%;border-radius:3px;transform-origin:left;transition:width .6s var(--ease)}
+  .fill.normal{background:var(--stone-400)}
+  .fill.watch{background:var(--ochre)}
+  .fill.dense{background:var(--terra)}
+  .row .stat{font-size:12px;color:var(--stone-600);white-space:nowrap;text-align:right}
+  .row .stat b{font-family:"Cormorant Garamond",serif;font-size:18px;color:var(--ink);font-weight:500}
+
+  /* counts */
+  .metrics{display:flex;gap:38px;flex-wrap:wrap}
+  .metric .v{font-family:"Cormorant Garamond",serif;font-size:40px;font-weight:300;line-height:1;color:var(--ink)}
+  .metric .k{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--stone-400);margin-top:7px}
+
+  .toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(16px);background:var(--ink);color:var(--marble-bright);font-size:13px;padding:11px 20px;border-radius:3px;opacity:0;pointer-events:none;transition:.3s var(--ease);z-index:20;box-shadow:var(--shadow-soft)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .brand{padding:46px 0 70px;border-top:1px solid var(--stone-200);margin-top:18px}
+  .brand-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:48px}
+  .brand h4{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--stone-600);margin:0 0 18px;font-weight:600}
+  .swatches{display:flex;border-radius:3px;overflow:hidden;border:1px solid var(--stone-200)}
+  .sw{flex:1;height:64px;position:relative}
+  .sw span{position:absolute;left:7px;bottom:6px;font-size:9.5px;letter-spacing:.04em}
+  .pig-note{font-size:12.5px;color:var(--stone-600);margin:14px 0 0;line-height:1.5}
+  .type-row{margin:0 0 18px}
+  .type-row .d{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:34px;line-height:1}
+  .type-row .b{font-size:15px;color:var(--stone-700);margin-top:4px}
+  .type-row .tag2{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--stone-400);margin-top:8px}
+
+  .foot{font-size:12px;color:var(--stone-400);padding:0 0 50px}
+
+  @media (max-width:720px){
+    .wrap{padding:0 22px}
+    .brand-grid{grid-template-columns:1fr;gap:38px}
+    .top nav{display:none}
+    .fix{flex-wrap:wrap;gap:8px}
+    .fix .why{text-align:left;min-width:0}
+    .metrics{gap:26px}
+    .row{grid-template-columns:20px 1fr auto;gap:10px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="field" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg">
+    <filter id="marble">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="4" seed="7" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.5"/></feComponentTransfer>
+      <feComponentTransfer><feFuncR type="linear" slope="0.55" intercept="0.5"/><feFuncG type="linear" slope="0.55" intercept="0.5"/><feFuncB type="linear" slope="0.55" intercept="0.5"/></feComponentTransfer>
+    </filter>
+    <rect width="100%" height="100%" filter="url(#marble)"/>
+  </svg>
+</div>
+<div class="light" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="mark">Soph<b>ia</b></div>
+    <nav><span><span class="dot"></span> a writing companion</span></nav>
+  </header>
+
+  <section class="hero">
+    <p class="eyebrow">Timeless wisdom, for today's words</p>
+    <h1>Write with<br><em>clarity</em>.</h1>
+    <p class="lede">Sophia reads what you've written and answers with judgment, not noise. It corrects, it offers a better word, and it shows you exactly where your prose leans too hard on the same one. <span class="quiet">Select your text. Let it think.</span></p>
+  </section>
+
+  <section class="stage">
+    <p class="stage-label">Try it</p>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="mark">Soph<b>ia</b></div>
+        <div class="meta">draft</div>
+      </div>
+
+      <div class="editor-wrap">
+        <p class="editor-label">Your writing</p>
+        <div class="editor-stack">
+          <div class="backdrop ed-type" id="backdrop" aria-hidden="true"></div>
+          <textarea id="src" class="ed-type" spellcheck="false" placeholder="Write or paste something here, then refine it.">i am human, and I do human things because I am human. the the world is wide and teh world is full of human moments, and i think human nature is what makes a human a human.</textarea>
+          <div class="pop" id="pop" role="dialog" aria-label="Correct the sentence">
+            <p class="pop-label">Correct the sentence</p>
+            <p class="sentence" id="popSentence"></p>
+            <div class="pop-actions">
+              <button class="pact accept" id="popAccept">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
+                Accept all
+              </button>
+              <button class="pact" id="popDismiss">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bar">
+        <div class="count" id="livecount"></div>
+        <button class="refine" id="refine">Refine</button>
+      </div>
+
+      <div class="legend">
+        <span class="key"><i class="k-terra"></i> Spelling</span>
+        <span class="key"><i class="k-lapis"></i> Grammar</span>
+        <span class="key"><i class="k-sage"></i> Word choice</span>
+        <span class="key"><i class="k-ochre"></i> Density</span>
+      </div>
+
+      <div class="results" id="results" aria-live="polite">
+        <div class="block">
+          <h3><span class="n">I</span> Corrections</h3>
+          <div id="fixes"></div>
+        </div>
+        <div class="block">
+          <h3><span class="n">II</span> Word choice</h3>
+          <div id="reps"></div>
+        </div>
+        <div class="block">
+          <h3><span class="n">III</span> Word density · ranked</h3>
+          <div class="rank-key">
+            <span><i style="background:var(--stone-400)"></i> measured</span>
+            <span><i style="background:var(--ochre)"></i> getting heavy (3×)</span>
+            <span><i style="background:var(--terra)"></i> too dense (4×+)</span>
+          </div>
+          <div id="rank"></div>
+        </div>
+        <div class="block">
+          <h3><span class="n">IV</span> Counts</h3>
+          <div class="metrics" id="metrics"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="brand">
+    <div class="brand-grid">
+      <div>
+        <h4>Palette · fresco pigments</h4>
+        <div class="swatches">
+          <div class="sw" style="background:#14140f;color:#f4f2ec"><span>Ink</span></div>
+          <div class="sw" style="background:#a14b3c;color:#f4f2ec"><span>Terracotta</span></div>
+          <div class="sw" style="background:#3f5d78;color:#f4f2ec"><span>Lapis</span></div>
+          <div class="sw" style="background:#b0823a;color:#14140f"><span>Ochre</span></div>
+          <div class="sw" style="background:#76845e;color:#f4f2ec"><span>Sage</span></div>
+          <div class="sw" style="background:#f6f6f5;color:#54534b"><span>Marble</span></div>
+        </div>
+        <p class="pig-note">Each color earns its place. Terracotta corrects, lapis governs grammar, sage offers a better word, ochre warns of crowding. Color only ever means something.</p>
+      </div>
+      <div>
+        <h4>Type</h4>
+        <div class="type-row">
+          <div class="d">Cormorant Garamond</div>
+          <div class="tag2">Display · the voice of antiquity</div>
+        </div>
+        <div class="type-row">
+          <div class="b">Hanken Grotesk — quiet, modern, the text you read and the buttons you press.</div>
+          <div class="tag2">Body &amp; interface</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">Sophia · concept demo. Everything here runs locally in your browser; the live build connects to Claude for full suggestions.</p>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+
+<script>
+(function(){
+  const src=document.getElementById('src');
+  const backdrop=document.getElementById('backdrop');
+  const refine=document.getElementById('refine');
+  const results=document.getElementById('results');
+  const fixesEl=document.getElementById('fixes');
+  const repsEl=document.getElementById('reps');
+  const rankEl=document.getElementById('rank');
+  const metricsEl=document.getElementById('metrics');
+  const live=document.getElementById('livecount');
+  const toast=document.getElementById('toast');
+  const pop=document.getElementById('pop');
+  const popSentence=document.getElementById('popSentence');
+  const popAccept=document.getElementById('popAccept');
+  const popDismiss=document.getElementById('popDismiss');
+
+  const STOP=new Set("a an and the of to in is it i you he she we they that this with for on at as are was be been do does did so but or if then than my your our his her its their them me us what makes".split(" "));
+
+  const SYN={
+    human:["mortal","person","soul","one of us","flesh and blood"],
+    world:["realm","earth","sphere","landscape","domain"],
+    things:["acts","deeds","matters","pursuits"],
+    wide:["vast","broad","sprawling","boundless"],
+    big:["vast","immense","sweeping","grand"],
+    good:["fine","sound","worthy","admirable"],
+    nature:["character","essence","temperament","makeup"],
+    think:["believe","suspect","reckon","hold"],
+    very:["deeply","truly","markedly","profoundly"],
+    really:["truly","genuinely","plainly"],
+    important:["vital","crucial","weighty","central"],
+    great:["fine","remarkable","superb","notable"],
+    make:["craft","build","form","shape"],
+    moments:["instants","passages","spells","occasions"],
+    said:["noted","remarked","observed","offered"],
+    nice:["fine","gracious","pleasant","handsome"],
+    beautiful:["lovely","striking","graceful","radiant"]
+  };
+
+  function tierFor(c){return c>=4?'dense':c===3?'watch':'normal';}
+
+  function analyze(text){
+    const t=text.replace(/\s+/g,' ').trim();
+    const words=t?t.split(/\s+/):[];
+    const wordCount=words.length;
+    const chars=text.replace(/\s/g,'').length;
+    const sentences=(t.match(/[^.!?]+[.!?]+/g)||(t?[t]:[])).length;
+    const readMins=Math.max(1,Math.round(wordCount/200));
+
+    const counts={};let contentTotal=0;
+    words.forEach(w=>{
+      const k=w.toLowerCase().replace(/[^a-z']/g,'');
+      if(!k||STOP.has(k)||k.length<3)return;
+      counts[k]=(counts[k]||0)+1;contentTotal++;
+    });
+    const ranked=Object.keys(counts)
+      .sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b))
+      .slice(0,10)
+      .map(k=>({word:k,count:counts[k],tier:tierFor(counts[k]),share:contentTotal?counts[k]/contentTotal:0}));
+
+    const repeats=ranked.filter(r=>r.count>=3).slice(0,4)
+      .map(r=>({word:r.word,count:r.count,syn:SYN[r.word]||["vary the wording","reach for a fresh term"]}));
+
+    const fixes=[];
+    if(/\bteh\b/i.test(text))fixes.push({type:'spell',was:'teh',now:'the',why:'spelling',re:/\bteh\b/gi,to:'the'});
+    const dbl=text.match(/\b(\w+)\s+\1\b/i);
+    if(dbl)fixes.push({type:'grammar',was:dbl[0],now:dbl[1],why:'doubled word',re:new RegExp("\\b("+dbl[1]+")\\s+\\1\\b","i"),to:dbl[1]});
+    if(/\bi\b/.test(text))fixes.push({type:'grammar',was:'i',now:'I',why:'capitalize',re:/\bi\b/g,to:'I'});
+    const lc=text.match(/(^|[.!?]\s+)([a-z])/);
+    if(lc)fixes.push({type:'grammar',was:lc[2]+'…',now:lc[2].toUpperCase()+'…',why:'sentence start',re:/(^|[.!?]\s+)([a-z])/,to:(s,p1,p2)=>p1+p2.toUpperCase()});
+    if(/ {2,}/.test(text))fixes.push({type:'mech',was:'·  ·',now:'· ·',why:'double space',re:/ {2,}/g,to:' '});
+
+    return {wordCount,chars,sentences,readMins,ranked,repeats,fixes,counts};
+  }
+
+  function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+  function paintBackdrop(a,text){
+    // highlight words at watch/dense tier inside the editor
+    const flagged={};
+    a.ranked.forEach(r=>{if(r.tier!=='normal')flagged[r.word]=r.tier;});
+    let html=esc(text);
+    const keys=Object.keys(flagged).sort((x,y)=>y.length-x.length);
+    if(keys.length){
+      const re=new RegExp("\\b("+keys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join("|")+")\\b","gi");
+      html=html.replace(re,(m)=>{
+        const t=flagged[m.toLowerCase()];
+        return t?'<mark class="m-'+t+'">'+m+'</mark>':m;
+      });
+    }
+    backdrop.innerHTML=html+'\n';
+  }
+
+  function showToast(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(showToast._t);showToast._t=setTimeout(()=>toast.classList.remove('show'),1300);}
+  function copy(text){navigator.clipboard?.writeText(text).then(()=>showToast('Copied “'+text+'”')).catch(()=>showToast('Copied'));}
+
+  function applyAllFixes(text,fixes){
+    let out=text;
+    fixes.forEach(f=>{out=out.replace(f.re,f.to);});
+    return out;
+  }
+
+  // builds the first sentence with inline colored diffs for the pop
+  function buildDiffSentence(text,fixes){
+    // take the first sentence (up to first . ! ?)
+    const m=text.match(/^[\s\S]*?[.!?]/);
+    let seg=m?m[0]:text;
+    let html=esc(seg);
+    // doubled word: the the -> the
+    html=html.replace(/\b(\w+)\s+\1\b/i,(s,w)=>'<del>'+w+' '+w+'</del> <ins>'+w+'</ins>');
+    // teh -> the
+    html=html.replace(/\bteh\b/gi,'<del>teh</del> <ins>the</ins>');
+    // lowercase standalone i -> I
+    html=html.replace(/\bi\b/g,'<ins>I</ins>');
+    // capitalize sentence start
+    html=html.replace(/^(\s*)([a-z])/,(s,sp,c)=>sp+'<ins>'+c.toUpperCase()+'</ins>');
+    return html;
+  }
+
+  function showPop(text,fixes){
+    if(!fixes.length){pop.classList.remove('show');return;}
+    popSentence.innerHTML=buildDiffSentence(text,fixes);
+    pop._fixes=fixes;
+    pop.classList.add('show');
+  }
+  popAccept.addEventListener('click',()=>{
+    src.value=applyAllFixes(src.value,pop._fixes||[]);
+    pop.classList.remove('show');
+    render();renderLive();showToast('Corrected');
+  });
+  popDismiss.addEventListener('click',()=>pop.classList.remove('show'));
+
+  function renderLive(){
+    const a=analyze(src.value);
+    live.innerHTML='<b>'+a.wordCount+'</b> words · <b>'+a.sentences+'</b> sentences';
+    paintBackdrop(a,src.value);
+  }
+
+  function render(){
+    const a=analyze(src.value);
+    paintBackdrop(a,src.value);
+
+    // corrections
+    fixesEl.innerHTML='';
+    if(!a.fixes.length){fixesEl.innerHTML='<p class="empty ok">Clean. Nothing to correct.</p>';}
+    else a.fixes.forEach(f=>{
+      const row=document.createElement('div');
+      row.className='fix t-'+f.type;
+      row.innerHTML='<div class="swap"><span class="was">'+esc(f.was)+'</span><span class="arrow">→</span><span class="now">'+esc(f.now)+'</span></div><div class="why">'+f.why+'</div>';
+      const btn=document.createElement('button');btn.className='apply';btn.textContent='Apply';
+      btn.addEventListener('click',()=>{src.value=src.value.replace(f.re,f.to);render();renderLive();showToast('Applied');});
+      row.appendChild(btn);fixesEl.appendChild(row);
+    });
+
+    // word choice
+    repsEl.innerHTML='';
+    if(!a.repeats.length){repsEl.innerHTML='<p class="empty ok">No word leans too hard. Nicely varied.</p>';}
+    else a.repeats.forEach(r=>{
+      const block=document.createElement('div');block.className='rep';
+      block.innerHTML='<div class="rep-head"><span class="rep-word">'+r.word+'</span><span class="rep-count">used <b>'+r.count+'×</b> — try one of these</span></div>';
+      const chips=document.createElement('div');chips.className='chips';
+      r.syn.forEach(s=>{const c=document.createElement('button');c.className='chip';c.textContent=s;c.addEventListener('click',()=>{copy(s);c.classList.add('copied');setTimeout(()=>c.classList.remove('copied'),900);});chips.appendChild(c);});
+      block.appendChild(chips);repsEl.appendChild(block);
+    });
+
+    // density ranking
+    rankEl.innerHTML='';
+    if(!a.ranked.length){rankEl.innerHTML='<p class="empty">Nothing to measure yet.</p>';}
+    else{
+      const max=a.ranked[0].count;
+      a.ranked.forEach((r,i)=>{
+        const tagLabel=r.tier==='dense'?'too dense':r.tier==='watch'?'heavy':'';
+        const row=document.createElement('div');row.className='row';
+        row.innerHTML=
+          '<div class="pos">'+(i+1)+'</div>'+
+          '<div class="meter"><div class="word">'+r.word+(tagLabel?' <span class="tag '+r.tier+'">'+tagLabel+'</span>':'')+'</div>'+
+          '<div class="track"><div class="fill '+r.tier+'" style="width:'+Math.round(r.count/max*100)+'%"></div></div></div>'+
+          '<div class="stat"><b>'+r.count+'×</b> · '+(r.share*100).toFixed(1)+'%</div>';
+        rankEl.appendChild(row);
+      });
+    }
+
+    metricsEl.innerHTML=metric(a.wordCount,'Words')+metric(a.sentences,'Sentences')+metric(a.chars,'Characters')+metric(a.readMins+' min','To read');
+  }
+  function metric(v,k){return '<div class="metric"><div class="v">'+v+'</div><div class="k">'+k+'</div></div>';}
+
+  let revealed=false;
+  refine.addEventListener('click',()=>{
+    const a=analyze(src.value);
+    render();
+    showPop(src.value,a.fixes);
+    if(!revealed){results.classList.add('show');revealed=true;}
+  });
+
+  let t;
+  src.addEventListener('input',()=>{renderLive();if(revealed){clearTimeout(t);t=setTimeout(render,150);}});
+  src.addEventListener('scroll',()=>{backdrop.scrollTop=src.scrollTop;});
+
+  renderLive();
+})();
+</script>
+</body>
+</html>
