@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sophia: privacy, license and credits</title>
+<meta name="description" content="How Sophia and this website handle your data, Sophia's MIT license, the open-source parts it is built on, and trademarks.">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="doc-page">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+  <a class="brand" href="index.html" aria-label="Sophia home"><img src="art/mark.svg" alt="" width="34" height="34"><span>Sophia</span></a>
+  <nav aria-label="Main navigation">
+    <a href="index.html#features">Features</a>
+    <a href="index.html#compare">Compare</a>
+    <a class="nav-cta" href="index.html#get">Get Sophia</a>
+  </nav>
+</header>
+<main id="main" tabindex="-1" class="doc">
+  <h1>Privacy, license and credits</h1>
+  <p class="doc-date">Last updated 29 October 2026</p>
+
+  <h2 id="privacy">Privacy</h2>
+  <h3>Sophia for Chrome</h3>
+  <ul>
+    <li>Your text is checked by code running in your browser. Sophia has no account and no server, and it sends nothing you write anywhere.</li>
+    <li>It reads only the text you select, or the text box you're typing in, to check it.</li>
+    <li>Your settings (your name, theme and which checks are on) are kept in your browser's own extension storage. Removing the extension removes them.</li>
+    <li>Its panel loads two typefaces from Google Fonts. That request asks for fonts, not for your text, and without it Sophia uses your system's fonts.</li>
+  </ul>
+  <h3>Sophia for Mac (in development)</h3>
+  <ul>
+    <li>Grammar is checked on your Mac, and rewrites use Apple's on-device model. The app contains no networking code at all.</li>
+    <li>It uses Accessibility permission to read the text field you're in and to apply a fix you accept. Secure fields and password managers are skipped.</li>
+    <li>Your personal dictionary and settings are files on your Mac in <code>~/.config/sophia</code>.</li>
+  </ul>
+  <h3>This website</h3>
+  <ul>
+    <li>No cookies, analytics, trackers, forms or third-party scripts. The page's security policy blocks them outright.</li>
+    <li>The site is hosted on Cloudflare Pages, and downloads come from GitHub. Like any web host, both handle standard request data (such as your IP address) to serve and protect them.</li>
+  </ul>
+
+  <h2 id="license">License</h2>
+  <p>Sophia is open source under the MIT license. You may use, copy, modify and share it, including commercially, as long as the copyright notice comes with it. It is provided "as is", without warranty of any kind. The full text is in the <a href="https://github.com/danieljcuesta007/sophia/blob/main/LICENSE" rel="noopener">LICENSE file</a>.</p>
+
+  <h2 id="credits">Credits</h2>
+  <ul>
+    <li><b>Harper</b> grammar checker (Apache-2.0), in Sophia for Mac.</li>
+    <li>Sophia for Mac's text-insertion engine comes from <a href="https://github.com/danieljcuesta007/cadence" rel="noopener">Cadence</a>, another DC Labs project (MIT).</li>
+    <li><b>Cormorant Garamond</b> and <b>Hanken Grotesk</b> typefaces (SIL Open Font License), in Sophia for Chrome.</li>
+  </ul>
+  <p>Designed and built by Daniel Cuesta under DC Labs.</p>
+
+  <h2 id="trademarks">Trademarks</h2>
+  <p>Grammarly, LanguageTool, Apple, macOS, Apple Intelligence and Chrome belong to their owners. They're named here only to compare features and to credit the work Sophia uses. Sophia is an independent project and is not affiliated with, sponsored by or endorsed by any of them.</p>
+
+  <h2 id="contact">Contact</h2>
+  <p>Questions and bugs: open an issue on <a href="https://github.com/danieljcuesta007/sophia/issues" rel="noopener">GitHub</a>. For a security problem, use <em>Report a vulnerability</em> on the repository's Security tab instead, so the details stay private.</p>
+</main>
+<footer class="site-footer">
+  <div class="footer-brand"><img src="art/mark.svg" alt="" width="40" height="40"><p><strong>Sophia</strong><br>A DC Labs product</p></div>
+  <nav aria-label="Footer"><a href="index.html">Home</a><a href="https://github.com/danieljcuesta007/sophia" rel="noopener">Source</a></nav>
+  <p class="fineprint">© 2026 Daniel Cuesta. MIT licensed. Sophia is not affiliated with or endorsed by the companies named on this page.</p>
+</footer>
+</body>
+</html>
