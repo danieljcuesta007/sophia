@@ -118,3 +118,7 @@ npx wrangler pages deploy site/dist --project-name sophia-writing --branch main
 The insertion engine is vendored verbatim from
 [Cadence](https://github.com/danieljcuesta007/cadence) (MIT). Grammar checking by
 [Harper](https://crates.io/crates/harper-core) (Apache-2.0).
+
+---
+
+Built by DC Labs, a Daniel J. Cuesta company.
